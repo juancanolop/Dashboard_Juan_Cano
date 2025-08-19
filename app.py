@@ -117,22 +117,24 @@ with col1:
     else:
         st.warning("No hay datos para mostrar en el gráfico.")
 
-    # Logos
+    # Logos (display only unique logos)
     st.subheader("Logos")
     if "Logo" in filtered_df.columns:
-        logos = [
-            logo.strip()
-            for logo_list in filtered_df["Logo"].dropna()
-            for logo in logo_list.split(",")
-        ]
+        # Extract all logos, split by comma, strip whitespace, and get unique values
+        all_logos = set()
+        for logo_list in filtered_df["Logo"].dropna():
+            for logo in logo_list.split(","):
+                all_logos.add(logo.strip())
+        logos = list(all_logos)
         if logos:
             cols = st.columns(min(len(logos), 6))
             for idx, logo in enumerate(logos):
                 logo_url = f"{CLOUDINARY_BASE_URL}logos/{logo}"
+                st.write(f"Attempting to load logo: {logo_url}")  # Debugging output
                 try:
                     cols[idx % 6].image(logo_url, width=50)
-                except Exception:
-                    cols[idx % 6].warning(f"No se pudo cargar el logo: {logo}")
+                except Exception as e:
+                    cols[idx % 6].warning(f"No se pudo cargar el logo: {logo} (Error: {e})")
         else:
             st.info("No hay logos disponibles.")
 
@@ -165,18 +167,20 @@ with col2:
 # 5. Fila: Imágenes (1 fila horizontal)
 # =========================
 st.subheader("Imágenes")
-if "Photo" in filtered_df.columns:
-    photos = filtered_df["Photo"].dropna().tolist()
-    if photos:
-        cols = st.columns(min(len(photos), 6))
-        for idx, photo in enumerate(photos):
-            photo_url = f"{CLOUDINARY_BASE_URL}images/{photo}"
+if "image_link" in filtered_df.columns:
+    image_links = filtered_df["image_link"].dropna().tolist()
+    if image_links:
+        cols = st.columns(min(len(image_links), 6))
+        for idx, image_url in enumerate(image_links):
+            st.write(f"Attempting to load image: {image_url}")  # Debugging output
             try:
-                cols[idx % 6].image(photo_url, use_container_width=True)
-            except Exception:
-                cols[idx % 6].warning(f"No se pudo cargar la imagen: {photo}")
+                cols[idx % 6].image(image_url, use_container_width=True)
+            except Exception as e:
+                cols[idx % 6].warning(f"No se pudo cargar la imagen desde {image_url} (Error: {e})")
     else:
-        st.info("No hay imágenes disponibles.")
+        st.info("No hay enlaces de imágenes disponibles.")
+else:
+    st.warning("No se encontró la columna 'image_link' en los datos.")
 
 # =========================
 # 6. Tabla de datos
