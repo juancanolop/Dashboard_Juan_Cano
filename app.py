@@ -129,11 +129,12 @@ with col1:
         if software_logos:
             cols = st.columns(min(len(software_logos), 6))
             for idx, software in enumerate(software_logos):
+                # Ensure the logo URL includes the 'logos/' folder
                 logo_url = f"{CLOUDINARY_BASE_URL}logos/{software}"
                 try:
                     cols[idx % 6].image(logo_url, width=50)
                 except Exception as e:
-                    cols[idx % 6].warning(f"No se pudo cargar el logo: {software} (Error: {e}. Verifica que el archivo existe en Cloudinary y es público.)")
+                    cols[idx % 6].warning(f"No se pudo cargar el logo: {software} (Error: {e}. Verifica que el archivo existe en Cloudinary /logos/ y es público.)")
         else:
             st.info("No hay software/logos disponibles.")
     else:
@@ -184,4 +185,19 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
                 except Exception as e:
                     st.warning(f"No se pudo cargar la imagen para {row['Project_Name']} (Error: {e})")
     else:
-        st
+        st.info("No hay enlaces de imágenes válidos disponibles.")
+else:
+    st.warning("No se encontró la columna 'image_link' o 'Project_Name' en los datos.")
+
+# =========================
+# 6. Tabla de datos
+# =========================
+st.subheader("Tabla de datos")
+show_cols = [
+    col for col in ["Project_Name", "Industry", "Scope", "Functions", "Client_Company", "Country"]
+    if col in filtered_df.columns
+]
+if not filtered_df.empty:
+    st.dataframe(filtered_df[show_cols])
+else:
+    st.info("No hay datos para mostrar.")
