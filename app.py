@@ -117,12 +117,12 @@ with col1:
     else:
         st.warning("No hay datos para mostrar en el gráfico.")
 
-    # Logos (display only unique logos from 'software' column)
+    # Logos (display only unique logos from 'Software' column)
     st.subheader("Logos")
-    if "software" in filtered_df.columns:
+    if "Software" in filtered_df.columns:
         # Extract all software names, strip whitespace, and get unique values
         all_software = set()
-        for software_list in filtered_df["software"].dropna():
+        for software_list in filtered_df["Software"].dropna():
             for software in software_list.split(","):
                 all_software.add(software.strip())
         software_logos = list(all_software)
@@ -137,7 +137,7 @@ with col1:
         else:
             st.info("No hay software/logos disponibles.")
     else:
-        st.warning("No se encontró la columna 'software' en los datos.")
+        st.warning("No se encontró la columna 'Software' en los datos.")
 
 with col2:
     st.subheader("Mapa")
@@ -184,19 +184,4 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
                 except Exception as e:
                     st.warning(f"No se pudo cargar la imagen para {row['Project_Name']} (Error: {e})")
     else:
-        st.info("No hay enlaces de imágenes válidos disponibles.")
-else:
-    st.warning("No se encontró la columna 'image_link' o 'Project_Name' en los datos.")
-
-# =========================
-# 6. Tabla de datos
-# =========================
-st.subheader("Tabla de datos")
-show_cols = [
-    col for col in ["Project_Name", "Industry", "Scope", "Functions", "Client_Company", "Country"]
-    if col in filtered_df.columns
-]
-if not filtered_df.empty:
-    st.dataframe(filtered_df[show_cols])
-else:
-    st.info("No hay datos para mostrar.")
+        st
