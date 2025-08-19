@@ -174,7 +174,7 @@ if "image_link" in filtered_df.columns:
         for idx, image_url in enumerate(image_links):
             st.write(f"Attempting to load image: {image_url}")  # Debugging output
             try:
-                cols[idx % 6].image(image_url, use_container_width=True)
+                cols[idx % 6].image(image_url, use_column_width=True)  # Changed to use_column_width
             except Exception as e:
                 cols[idx % 6].warning(f"No se pudo cargar la imagen desde {image_url} (Error: {e})")
     else:
