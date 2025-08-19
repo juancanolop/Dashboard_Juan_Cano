@@ -4,6 +4,42 @@ import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 
+# Custom CSS for enhanced styling
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #0E1117;
+    }
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #07b9d1;
+        margin: 1rem 0;
+        border-bottom: 2px solid #07b9d1;
+        padding-bottom: 0.5rem;
+    }
+    .logo-image {
+        max-width: 50px;
+        height: auto;
+        object-fit: contain;
+        border-radius: 5px;
+        border: 1px solid #34495e;
+    }
+    .cloudinary-image {
+        max-width: 20vw;
+        height: auto;
+        object-fit: cover;
+        border-radius: 5px;
+        border: 1px solid #34495e;
+        cursor: pointer;
+    }
+    .warning-text {
+        color: #e74c3c;
+        font-size: 0.9rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Configuración de layout amplio
 st.set_page_config(layout="wide")
 
@@ -96,14 +132,14 @@ col1, col2 = st.columns([2, 1])
 CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
 
 with col1:
-    st.subheader("Skills")
+    st.markdown('<div class="section-header">Skills</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Skills" in filtered_df.columns:
         skills_counts = filtered_df["Skills"].str.split(", ").explode().value_counts()
         if not skills_counts.empty:
             fig = px.pie(
                 names=skills_counts.index,
                 values=skills_counts.values,
-                title="Skills",
+                title="",
                 template="plotly_dark"
             )
             fig.update_layout(
@@ -118,7 +154,7 @@ with col1:
         st.warning("No hay datos para mostrar en el gráfico.")
 
     # Logos (display only unique logos from 'Software' column)
-    st.subheader("Logos")
+    st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
     if "Software" in filtered_df.columns:
         # Extract all software names, strip whitespace, and get unique values
         all_software = set()
@@ -129,19 +165,19 @@ with col1:
         if software_logos:
             cols = st.columns(min(len(software_logos), 6))
             for idx, software in enumerate(software_logos):
-                # Ensure the logo URL includes the 'logos/' folder
-                logo_url = f"{CLOUDINARY_BASE_URL}logos/{software}"
+                # Try with .jpg extension if no extension is provided
+                logo_url = f"{CLOUDINARY_BASE_URL}logos/{software}.jpg" if not software.lower().endswith(('.jpg', '.png')) else f"{CLOUDINARY_BASE_URL}logos/{software}"
                 try:
-                    cols[idx % 6].image(logo_url, width=50)
+                    cols[idx % 6].image(logo_url, width=50, output_format='PNG', use_column_width=False, clamp=True, channels="RGB")
                 except Exception as e:
-                    cols[idx % 6].warning(f"No se pudo cargar el logo: {software} (Error: {e}. Verifica que el archivo existe en Cloudinary /logos/ y es público.)")
+                    cols[idx % 6].markdown(f'<div class="warning-text">No se pudo cargar el logo: {software} (Error: {e}. Verifica que el archivo existe en Cloudinary /logos/ y es público.)</div>', unsafe_allow_html=True)
         else:
             st.info("No hay software/logos disponibles.")
     else:
         st.warning("No se encontró la columna 'Software' en los datos.")
 
 with col2:
-    st.subheader("Mapa")
+    st.markdown('<div class="section-header">Mapa</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Latitud" in filtered_df.columns and "Longitud" in filtered_df.columns:
         lat_center = filtered_df["Latitud"].mean()
         lon_center = filtered_df["Longitud"].mean()
@@ -168,7 +204,7 @@ with col2:
 # =========================
 # 5. Fila: Imágenes (Project Gallery style)
 # =========================
-st.subheader("Galería de Proyectos")
+st.markdown('<div class="section-header">Galería de Proyectos</div>', unsafe_allow_html=True)
 if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
     valid_images = filtered_df[filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str))]
     if not valid_images.empty:
@@ -178,12 +214,12 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
             with col:
                 image_url = row["image_link"]
                 try:
-                    st.image(image_url, caption=row["Project_Name"], use_column_width=True)
+                    st.image(image_url, caption=row["Project_Name"], use_column_width=True, output_format='PNG', clamp=True, channels="RGB", class_="cloudinary-image")
                     # Optional: Add a "Más Información" link if a column like 'Blog_Link' exists
                     if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
                         st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
                 except Exception as e:
-                    st.warning(f"No se pudo cargar la imagen para {row['Project_Name']} (Error: {e})")
+                    st.markdown(f'<div class="warning-text">No se pudo cargar la imagen para {row["Project_Name"]} (Error: {e})</div>', unsafe_allow_html=True)
     else:
         st.info("No hay enlaces de imágenes válidos disponibles.")
 else:
@@ -192,7 +228,7 @@ else:
 # =========================
 # 6. Tabla de datos
 # =========================
-st.subheader("Tabla de datos")
+st.markdown('<div class="section-header">Tabla de datos</div>', unsafe_allow_html=True)
 show_cols = [
     col for col in ["Project_Name", "Industry", "Scope", "Functions", "Client_Company", "Country"]
     if col in filtered_df.columns
