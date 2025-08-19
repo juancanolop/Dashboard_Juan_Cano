@@ -4,6 +4,9 @@ import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 
+# Configuración de layout amplio (must be first Streamlit command)
+st.set_page_config(layout="wide")
+
 # Custom CSS for enhanced styling
 st.markdown("""
 <style>
@@ -39,9 +42,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Configuración de layout amplio
-st.set_page_config(layout="wide")
 
 # =========================
 # 1. Cargar los datos
