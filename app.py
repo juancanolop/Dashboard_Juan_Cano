@@ -12,20 +12,24 @@ st.set_page_config(layout="wide")
 # =========================
 @st.cache_data
 def load_data():
-    # URL del archivo CSV en GitHub (reemplaza con tu enlace)
-    data_url = "https://github.com/juancanolop/Dashboard_Juan_Cano/blob/main/data.csv"
-    df = pd.read_csv(data_url)
-    df.columns = df.columns.str.strip()
-
-    # Convertir columna Year
-    if df["Year"].dtype == "object":
-        df["Year"] = pd.to_datetime(df["Year"]).dt.year
-    elif "datetime" in str(df["Year"].dtype):
-        df["Year"] = df["Year"].dt.year
-
-    return df
+    data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/main/data.csv"
+    try:
+        df = pd.read_csv(data_url)
+        df.columns = df.columns.str.strip()
+        # Convertir columna Year
+        if df["Year"].dtype == "object":
+            df["Year"] = pd.to_datetime(df["Year"], errors='coerce').dt.year
+        elif "datetime" in str(df["Year"].dtype):
+            df["Year"] = df["Year"].dt.year
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar el archivo CSV: {e}")
+        return pd.DataFrame()
 
 df = load_data()
+if df.empty:
+    st.error("No se pudieron cargar los datos. Verifica la URL del CSV.")
+    st.stop()
 
 # =========================
 # 2. Filtros (sidebar y arriba)
@@ -58,7 +62,6 @@ if "All" in selected_years_sidebar:
 else:
     years_to_use = [y for y in selected_years_sidebar if isinstance(y, int)]
 
-# Añadir el año del slider si no está incluido
 if selected_year_slider not in years_to_use:
     years_to_use.append(selected_year_slider)
 
@@ -70,7 +73,7 @@ selected_industries = st.sidebar.multiselect("Industrias", industries)
 types = sorted(df["Type"].dropna().unique()) if "Type" in df.columns else []
 selected_types = st.sidebar.multiselect("Tipos", types)
 
-# Unir lógica de selección: si el año del slider no está en el multiselect, lo agregamos
+# Unir lógica de selección
 if selected_year_slider not in selected_years_sidebar:
     selected_years_sidebar.append(selected_year_slider)
 
@@ -88,9 +91,8 @@ if selected_types:
 # =========================
 # 4. Fila: Skills + Logos vs Mapa
 # =========================
-col1, col2 = st.columns([2, 1])  # Más espacio para skills/logos
+col1, col2 = st.columns([2, 1])
 
-# Base URL de Cloudinary (reemplaza con tu Cloudinary base URL)
 CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
 
 with col1:
@@ -98,7 +100,17 @@ with col1:
     if not filtered_df.empty and "Skills" in filtered_df.columns:
         skills_counts = filtered_df["Skills"].str.split(", ").explode().value_counts()
         if not skills_counts.empty:
-            fig = px.pie(names=skills_counts.index, values=skills_counts.values, title="Skills")
+            fig = px.pie(
+                names=skills_counts.index,
+                values=skills_counts.values,
+                title="Skills",
+                template="plotly_dark"
+            )
+            fig.update_layout(
+                font_color="#FAFAFA",
+                paper_bgcolor="#0E1117",
+                plot_bgcolor="#0E1117"
+            )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No hay datos de Skills.")
@@ -117,7 +129,10 @@ with col1:
             cols = st.columns(min(len(logos), 6))
             for idx, logo in enumerate(logos):
                 logo_url = f"{CLOUDINARY_BASE_URL}logos/{logo}"
-                cols[idx % 6].image(logo_url, width=50)
+                try:
+                    cols[idx % 6].image(logo_url, width=50)
+                except Exception:
+                    cols[idx % 6].warning(f"No se pudo cargar el logo: {logo}")
         else:
             st.info("No hay logos disponibles.")
 
@@ -127,7 +142,11 @@ with col2:
         lat_center = filtered_df["Latitud"].mean()
         lon_center = filtered_df["Longitud"].mean()
 
-        map_ = folium.Map(location=[lat_center, lon_center], zoom_start=5)
+        map_ = folium.Map(
+            location=[lat_center, lon_center],
+            zoom_start=5,
+            tiles="CartoDB dark_matter"
+        )
 
         bounds = []
         for _, row in filtered_df.iterrows():
@@ -152,7 +171,10 @@ if "Photo" in filtered_df.columns:
         cols = st.columns(min(len(photos), 6))
         for idx, photo in enumerate(photos):
             photo_url = f"{CLOUDINARY_BASE_URL}images/{photo}"
-            cols[idx % 6].image(photo_url, use_container_width=True)
+            try:
+                cols[idx % 6].image(photo_url, use_container_width=True)
+            except Exception:
+                cols[idx % 6].warning(f"No se pudo cargar la imagen: {photo}")
     else:
         st.info("No hay imágenes disponibles.")
 
