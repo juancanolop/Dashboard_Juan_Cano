@@ -164,23 +164,29 @@ with col2:
         st.warning("No hay datos geográficos.")
 
 # =========================
-# 5. Fila: Imágenes (1 fila horizontal)
+# 5. Fila: Imágenes (Project Gallery style)
 # =========================
-st.subheader("Imágenes")
-if "image_link" in filtered_df.columns:
-    image_links = filtered_df["image_link"].dropna().tolist()
-    if image_links:
-        cols = st.columns(min(len(image_links), 6))
-        for idx, image_url in enumerate(image_links):
-            st.write(f"Attempting to load image: {image_url}")  # Debugging output
-            try:
-                cols[idx % 6].image(image_url, use_column_width=True)  # Changed to use_column_width
-            except Exception as e:
-                cols[idx % 6].warning(f"No se pudo cargar la imagen desde {image_url} (Error: {e})")
+st.subheader("Galería de Proyectos")
+if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
+    valid_images = filtered_df[filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str))]
+    if not valid_images.empty:
+        cols = st.columns(4)  # 4-column layout like the reference
+        for i, (_, row) in enumerate(valid_images.head(8).iterrows()):  # Limit to 8 images
+            col = cols[i % 4]
+            with col:
+                image_url = row["image_link"]
+                st.write(f"Attempting to load image: {image_url}")  # Debugging output
+                try:
+                    st.image(image_url, caption=row["Project_Name"], use_column_width=True)
+                    # Optional: Add a "Learn More" link if a column like 'Blog_Link' exists
+                    if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                        st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
+                except Exception as e:
+                    st.warning(f"No se pudo cargar la imagen para {row['Project_Name']} (Error: {e})")
     else:
-        st.info("No hay enlaces de imágenes disponibles.")
+        st.info("No hay enlaces de imágenes válidos disponibles.")
 else:
-    st.warning("No se encontró la columna 'image_link' en los datos.")
+    st.warning("No se encontró la columna 'image_link' o 'Project_Name' en los datos.")
 
 # =========================
 # 6. Tabla de datos
