@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import folium
 from streamlit_folium import st_folium
+import requests
+from PIL import Image
+import io
 
 # Configuración de layout amplio (must be first Streamlit command)
 st.set_page_config(layout="wide")
@@ -40,8 +43,44 @@ st.markdown("""
         color: #e74c3c;
         font-size: 0.9rem;
     }
+    .success-text {
+        color: #2ecc71;
+        font-size: 0.9rem;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# =========================
+# Funciones auxiliares para imágenes
+# =========================
+def validate_url(url):
+    """Valida si una URL es accesible"""
+    try:
+        response = requests.head(url, timeout=5, allow_redirects=True)
+        return response.status_code == 200
+    except:
+        return False
+
+def load_image_from_url(url, max_retries=3):
+    """Carga una imagen desde una URL con reintentos"""
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=10, stream=True)
+            if response.status_code == 200:
+                image = Image.open(io.BytesIO(response.content))
+                return image
+        except Exception as e:
+            if attempt == max_retries - 1:
+                st.error(f"Error cargando imagen después de {max_retries} intentos: {e}")
+            continue
+    return None
+
+def get_cloudinary_url(public_id, cloud_name="dmf2pbdlq", format_ext="jpg", transformations=""):
+    """Genera URL de Cloudinary con formato correcto"""
+    base_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/"
+    if transformations:
+        return f"{base_url}{transformations}/{public_id}.{format_ext}"
+    return f"{base_url}{public_id}.{format_ext}"
 
 # =========================
 # 1. Cargar los datos
@@ -66,6 +105,14 @@ df = load_data()
 if df.empty:
     st.error("No se pudieron cargar los datos. Verifica la URL del CSV.")
     st.stop()
+
+# Debugging: Mostrar información sobre las columnas
+with st.expander("🔍 Debug Info - Columnas disponibles"):
+    st.write("Columnas en el DataFrame:", list(df.columns))
+    if "Software" in df.columns:
+        st.write("Ejemplos de Software:", df["Software"].dropna().head().tolist())
+    if "image_link" in df.columns:
+        st.write("Ejemplos de image_link:", df["image_link"].dropna().head().tolist())
 
 # =========================
 # 2. Filtros (sidebar y arriba)
@@ -129,8 +176,6 @@ if selected_types:
 # =========================
 col1, col2 = st.columns([2, 1])
 
-CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
-
 with col1:
     st.markdown('<div class="section-header">Skills</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Skills" in filtered_df.columns:
@@ -153,26 +198,56 @@ with col1:
     else:
         st.warning("No hay datos para mostrar en el gráfico.")
 
-    # Logos (display only unique logos from 'Software' column)
+    # Logos mejorados con validación
     st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
     if "Software" in filtered_df.columns:
         # Extract all software names, strip whitespace, and get unique values
         all_software = set()
         for software_list in filtered_df["Software"].dropna():
-            for software in software_list.split(","):
-                all_software.add(software.strip())
-        software_logos = list(all_software)
+            if pd.notna(software_list) and isinstance(software_list, str):
+                for software in software_list.split(","):
+                    software_clean = software.strip()
+                    if software_clean:  # Only add non-empty strings
+                        all_software.add(software_clean)
+        
+        software_logos = sorted(list(all_software))
         if software_logos:
-            cols = st.columns(min(len(software_logos), 6))
-            for idx, software in enumerate(software_logos):
-                # Try with .jpg extension if no extension is provided
-                logo_url = f"{CLOUDINARY_BASE_URL}logos/{software}.jpg" if not software.lower().endswith(('.jpg', '.png')) else f"{CLOUDINARY_BASE_URL}logos/{software}"
-                try:
-                    cols[idx % 6].image(logo_url, width=50, output_format='PNG', use_column_width=False, clamp=True, channels="RGB")
-                except Exception as e:
-                    cols[idx % 6].markdown(f'<div class="warning-text">No se pudo cargar el logo: {software} (Error: {e}. Verifica que el archivo existe en Cloudinary /logos/ y es público.)</div>', unsafe_allow_html=True)
+            st.write(f"Encontrados {len(software_logos)} logos únicos")
+            
+            # Crear múltiples filas de columnas si hay muchos logos
+            logos_per_row = 6
+            for i in range(0, len(software_logos), logos_per_row):
+                row_logos = software_logos[i:i+logos_per_row]
+                cols = st.columns(len(row_logos))
+                
+                for idx, software in enumerate(row_logos):
+                    with cols[idx]:
+                        # Intentar diferentes formatos de imagen
+                        success = False
+                        for ext in ['jpg', 'png', 'jpeg', 'webp']:
+                            logo_url = get_cloudinary_url(f"logos/{software}", format_ext=ext)
+                            
+                            if validate_url(logo_url):
+                                try:
+                                    image = load_image_from_url(logo_url)
+                                    if image:
+                                        st.image(image, caption=software, width=60)
+                                        st.markdown(f'<div class="success-text">✅ {software}</div>', unsafe_allow_html=True)
+                                        success = True
+                                        break
+                                except Exception as e:
+                                    continue
+                        
+                        if not success:
+                            # Mostrar placeholder o error
+                            st.markdown(f'<div class="warning-text">❌ No se pudo cargar: {software}</div>', unsafe_allow_html=True)
+                            # Opcional: mostrar URLs intentadas para debugging
+                            if st.checkbox(f"Debug URLs para {software}", key=f"debug_{software}"):
+                                for ext in ['jpg', 'png', 'jpeg', 'webp']:
+                                    test_url = get_cloudinary_url(f"logos/{software}", format_ext=ext)
+                                    st.text(f"{ext.upper()}: {test_url}")
         else:
-            st.info("No hay software/logos disponibles.")
+            st.info("No hay software/logos disponibles en los datos filtrados.")
     else:
         st.warning("No se encontró la columna 'Software' en los datos.")
 
@@ -202,26 +277,58 @@ with col2:
         st.warning("No hay datos geográficos.")
 
 # =========================
-# 5. Fila: Imágenes (Project Gallery style)
+# 5. Fila: Imágenes mejoradas (Project Gallery style)
 # =========================
 st.markdown('<div class="section-header">Galería de Proyectos</div>', unsafe_allow_html=True)
 if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
-    valid_images = filtered_df[filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str))]
+    valid_images = filtered_df[
+        (filtered_df["image_link"].notna()) & 
+        (filtered_df["image_link"] != "") &
+        (filtered_df["image_link"].str.startswith(('http', 'https'), na=False))
+    ]
+    
     if not valid_images.empty:
-        cols = st.columns(4)  # 4-column layout
-        for i, (_, row) in enumerate(valid_images.head(8).iterrows()):  # Limit to 8 images
-            col = cols[i % 4]
-            with col:
-                image_url = row["image_link"]
-                try:
-                    st.image(image_url, caption=row["Project_Name"], use_column_width=True, output_format='PNG', clamp=True, channels="RGB", class_="cloudinary-image")
-                    # Optional: Add a "Más Información" link if a column like 'Blog_Link' exists
-                    if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
-                        st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
-                except Exception as e:
-                    st.markdown(f'<div class="warning-text">No se pudo cargar la imagen para {row["Project_Name"]} (Error: {e})</div>', unsafe_allow_html=True)
+        st.write(f"Mostrando {len(valid_images)} imágenes de proyectos")
+        
+        # Crear galería con mejor manejo de errores
+        images_per_row = 4
+        for i in range(0, min(len(valid_images), 12), images_per_row):  # Limitar a 12 imágenes
+            row_images = valid_images.iloc[i:i+images_per_row]
+            cols = st.columns(len(row_images))
+            
+            for idx, (_, row) in enumerate(row_images.iterrows()):
+                with cols[idx]:
+                    image_url = row["image_link"]
+                    project_name = row["Project_Name"]
+                    
+                    # Validar URL antes de intentar cargar
+                    if validate_url(image_url):
+                        try:
+                            image = load_image_from_url(image_url)
+                            if image:
+                                st.image(image, caption=project_name, use_column_width=True)
+                                st.markdown(f'<div class="success-text">✅ Cargado correctamente</div>', unsafe_allow_html=True)
+                                
+                                # Optional: Add a "Más Información" link if a column like 'Blog_Link' exists
+                                if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                                    st.markdown(f"[📖 Más Información]({row['Blog_Link']})")
+                            else:
+                                st.markdown(f'<div class="warning-text">❌ Error al procesar imagen para {project_name}</div>', unsafe_allow_html=True)
+                                st.text(f"URL: {image_url}")
+                        except Exception as e:
+                            st.markdown(f'<div class="warning-text">❌ Error cargando {project_name}: {str(e)[:50]}...</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<div class="warning-text">❌ URL no accesible: {project_name}</div>', unsafe_allow_html=True)
+                        st.text(f"URL: {image_url}")
     else:
-        st.info("No hay enlaces de imágenes válidos disponibles.")
+        st.info("No hay enlaces de imágenes válidos disponibles en los datos filtrados.")
+        
+        # Mostrar información de debugging
+        if st.checkbox("Mostrar URLs de imágenes para debugging"):
+            st.write("URLs encontradas:")
+            for idx, row in filtered_df.iterrows():
+                if "image_link" in row and pd.notna(row["image_link"]):
+                    st.text(f"{row['Project_Name']}: {row['image_link']}")
 else:
     st.warning("No se encontró la columna 'image_link' o 'Project_Name' en los datos.")
 
@@ -237,3 +344,27 @@ if not filtered_df.empty:
     st.dataframe(filtered_df[show_cols])
 else:
     st.info("No hay datos para mostrar.")
+
+# =========================
+# 7. Información de debugging adicional
+# =========================
+with st.expander("🔧 Información de debugging avanzada"):
+    st.write("**Total de filas en datos originales:**", len(df))
+    st.write("**Total de filas después del filtrado:**", len(filtered_df))
+    
+    if "image_link" in df.columns:
+        st.write("**Análisis de image_link:**")
+        total_images = df["image_link"].notna().sum()
+        valid_http_images = df["image_link"].str.startswith(('http', 'https'), na=False).sum()
+        st.write(f"- Total de imágenes no nulas: {total_images}")
+        st.write(f"- URLs válidas (http/https): {valid_http_images}")
+    
+    if "Software" in df.columns:
+        st.write("**Análisis de Software:**")
+        software_entries = df["Software"].notna().sum()
+        st.write(f"- Entradas de software no nulas: {software_entries}")
+        if software_entries > 0:
+            # Mostrar algunos ejemplos
+            st.write("- Ejemplos de software:")
+            for software_list in df["Software"].dropna().head(3):
+                st.text(f"  {software_list}")
