@@ -91,7 +91,7 @@ if selected_types:
 col1, col2 = st.columns([2, 1])  # Más espacio para skills/logos
 
 # Base URL de Cloudinary (reemplaza con tu Cloudinary base URL)
-CLOUDINARY_BASE_URL = "https://res.cloudinary.com/YOUR_CLOUD_NAME/image/upload/"
+CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
 
 with col1:
     st.subheader("Skills")
