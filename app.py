@@ -153,34 +153,29 @@ with col1:
     else:
         st.warning("No hay datos para mostrar en el gráfico.")
 
-    # Logos (display only unique logos from 'Logo' column with fallback to 'Software')
+    # Logos (display only unique logos from 'Software' column with .jpg extension)
     st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
-    if "Logo" in filtered_df.columns:
-        # Extract all logo names, split by comma, strip whitespace, and get unique values
-        all_logos = set()
-        for logo_list in filtered_df["Logo"].dropna():
-            for logo in logo_list.split(","):
-                all_logos.add(logo.strip())
-        # Fallback to Software if Logo is empty for a row
-        if not all_logos:
-            if "Software" in filtered_df.columns:
-                for software_list in filtered_df["Software"].dropna():
-                    for software in software_list.split(","):
-                        software = software.strip()
-                        all_logos.add(f"{software}.jpg" if not software.lower().endswith(('.jpg', '.png')) else software)
-        logos = list(all_logos)
-        if logos:
-            cols = st.columns(min(len(logos), 6))
-            for idx, logo in enumerate(logos):
-                logo_url = f"{CLOUDINARY_BASE_URL}logos/{logo}"
+    if "Software" in filtered_df.columns:
+        # Extract all software names, split by comma, strip whitespace, and get unique values
+        all_software = set()
+        for software_list in filtered_df["Software"].dropna():
+            for software in software_list.split(","):
+                software = software.strip().strip('"').strip("'").strip('[').strip(']')  # Clean up any quotes or brackets
+                all_software.add(software)
+        software_logos = list(all_software)
+        if software_logos:
+            cols = st.columns(min(len(software_logos), 6))
+            for idx, software in enumerate(software_logos):
+                # Use software name with .jpg extension
+                logo_url = f"{CLOUDINARY_BASE_URL}logos/{software}.jpg"
                 try:
                     cols[idx % 6].image(logo_url, width=50, output_format='PNG', use_column_width=False, clamp=True, channels="RGB")
                 except Exception as e:
-                    cols[idx % 6].markdown(f'<div class="warning-text">No se pudo cargar el logo: {logo} (Error: {e}. Verifica que el archivo existe en Cloudinary /logos/ y es público.)</div>', unsafe_allow_html=True)
+                    cols[idx % 6].markdown(f'<div class="warning-text">No se pudo cargar el logo: {software}.jpg (Error: {e}. Verifica que el archivo existe en Cloudinary /logos/ y es público.)</div>', unsafe_allow_html=True)
         else:
-            st.info("No hay logos disponibles.")
+            st.info("No hay software/logos disponibles.")
     else:
-        st.warning("No se encontró la columna 'Logo' en los datos.")
+        st.warning("No se encontró la columna 'Software' en los datos.")
 
 with col2:
     st.markdown('<div class="section-header">Mapa</div>', unsafe_allow_html=True)
