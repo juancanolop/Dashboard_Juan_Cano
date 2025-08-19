@@ -167,49 +167,53 @@ with col1:
         st.warning("No hay datos para mostrar en el gráfico.")
 
     # Logos (mejorado con sanitización y verificación)
-    st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
-    if "Software" in filtered_df.columns:
-        all_software = set()
-        for software_list in filtered_df["Software"].dropna():
-            for software in str(software_list).split(","):
-                # Limpieza profunda
-                software = software.strip().strip('"\'[] ')
-                software = software.replace(" ", "_").replace("-", "_").lower()
-                if software and software != "":
-                    all_software.add(software)
-        software_logos = list(all_software)
+st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
+if "Software" in filtered_df.columns:
+    all_software = set()
+    for software_list in filtered_df["Software"].dropna():
+        for software in str(software_list).split(","):
+            # Limpieza profunda
+            software = software.strip().strip('"\'[] ')
+            if not software:
+                continue
+            # Convertir a minúsculas y reemplazar espacios por guiones bajos
+            software_clean = software.replace(" ", "_").replace("-", "_").lower()
+            all_software.add(software_clean)
 
-        if software_logos:
-            cols = st.columns(min(len(software_logos), 6))
-            for idx, software in enumerate(software_logos):
-                # Intentar con .jpg y .png
-                logo_url_jpg = f"{CLOUDINARY_BASE_URL}logos/{software}.jpg"
-                logo_url_png = f"{CLOUDINARY_BASE_URL}logos/{software}.png"
+    software_logos = list(all_software)
+    if software_logos:
+        cols = st.columns(min(len(software_logos), 6))
+        for idx, software in enumerate(software_logos):
+            # Intentar con .jpg y .png
+            urls_to_try = [
+                f"{CLOUDINARY_BASE_URL}logos/{software}.jpg",
+                f"{CLOUDINARY_BASE_URL}logos/{software}.png"
+            ]
+            img_url = None
+            success = False
 
-                img_url = None
+            for url in urls_to_try:
                 try:
-                    response = requests.head(logo_url_jpg, timeout=5, headers=HEADERS)
+                    response = requests.head(url, timeout=5, headers=HEADERS)
                     if response.status_code == 200:
-                        img_url = logo_url_jpg
-                    else:
-                        response = requests.head(logo_url_png, timeout=5, headers=HEADERS)
-                        if response.status_code == 200:
-                            img_url = logo_url_png
-                except Exception:
-                    pass
+                        img_url = url
+                        success = True
+                        break
+                except Exception as e:
+                    continue
 
-                with cols[idx % 6]:
-                    if img_url:
-                        try:
-                            st.image(img_url, width=50, use_column_width=False, clamp=True, channels="RGB")
-                        except:
-                            st.markdown('<div class="warning-text">⚠️</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="warning-text">⚠️</div>', unsafe_allow_html=True)
-        else:
-            st.info("No hay software/logos disponibles.")
+            with cols[idx % 6]:
+                if success:
+                    try:
+                        st.image(img_url, width=50, use_column_width=False, clamp=True, channels="RGB")
+                    except Exception as e:
+                        st.markdown(f'<div class="warning-text">⚠️ Error: {e}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="warning-text">⚠️ No encontrado: {software}</div>', unsafe_allow_html=True)
     else:
-        st.warning("No se encontró la columna 'Software' en los datos.")
+        st.info("No hay software/logos disponibles.")
+else:
+    st.warning("No se encontró la columna 'Software' en los datos.")
 
 with col2:
     st.markdown('<div class="section-header">Mapa</div>', unsafe_allow_html=True)
