@@ -13,7 +13,7 @@ st.set_page_config(layout="wide")
 @st.cache_data
 def load_data():
     # URL del archivo CSV en GitHub (reemplaza con tu enlace)
-    data_url = "https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/data/data.csv"
+    data_url = "https://github.com/juancanolop/Dashboard_Juan_Cano/blob/main/data.csv"
     df = pd.read_csv(data_url)
     df.columns = df.columns.str.strip()
 
