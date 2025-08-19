@@ -1,7 +1,1 @@
-*.pyc
-__pycache__/
-venv/
-.env
-*.log
-*.csv
-*.xlsx
+*.pyc pycache/ venv/ .env *.log *.csv *.xlsx
