@@ -117,25 +117,27 @@ with col1:
     else:
         st.warning("No hay datos para mostrar en el gráfico.")
 
-    # Logos (display only unique logos)
+    # Logos (display only unique logos from 'software' column)
     st.subheader("Logos")
-    if "Logo" in filtered_df.columns:
-        # Extract all logos, split by comma, strip whitespace, and get unique values
-        all_logos = set()
-        for logo_list in filtered_df["Logo"].dropna():
-            for logo in logo_list.split(","):
-                all_logos.add(logo.strip())
-        logos = list(all_logos)
-        if logos:
-            cols = st.columns(min(len(logos), 6))
-            for idx, logo in enumerate(logos):
-                logo_url = f"{CLOUDINARY_BASE_URL}logos/{logo}"
+    if "software" in filtered_df.columns:
+        # Extract all software names, strip whitespace, and get unique values
+        all_software = set()
+        for software_list in filtered_df["software"].dropna():
+            for software in software_list.split(","):
+                all_software.add(software.strip())
+        software_logos = list(all_software)
+        if software_logos:
+            cols = st.columns(min(len(software_logos), 6))
+            for idx, software in enumerate(software_logos):
+                logo_url = f"{CLOUDINARY_BASE_URL}logos/{software}"
                 try:
                     cols[idx % 6].image(logo_url, width=50)
                 except Exception as e:
-                    cols[idx % 6].warning(f"No se pudo cargar el logo: {logo} (Error: {e}. Verifica que el archivo existe en Cloudinary y es público.)")
+                    cols[idx % 6].warning(f"No se pudo cargar el logo: {software} (Error: {e}. Verifica que el archivo existe en Cloudinary y es público.)")
         else:
-            st.info("No hay logos disponibles.")
+            st.info("No hay software/logos disponibles.")
+    else:
+        st.warning("No se encontró la columna 'software' en los datos.")
 
 with col2:
     st.subheader("Mapa")
