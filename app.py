@@ -223,7 +223,7 @@ with col2:
 
         map_ = folium.Map(
             location=[lat_center, lon_center],
-            zoom_start=7,
+            zoom_start=10,
             tiles="OpenStreetMap"
         )
 
