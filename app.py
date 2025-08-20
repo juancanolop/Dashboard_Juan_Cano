@@ -205,7 +205,7 @@ if "Software" in filtered_df.columns:
             with cols[idx % 6]:
                 if success:
                     try:
-                        st.image(img_url, width=50, use_column_width=False, clamp=True, channels="RGB")
+                        st.image(img_url, width=50, use_container_width=False, clamp=True, channels="RGB")
                     except Exception as e:
                         st.markdown(f'<div class="warning-text">⚠️ Error: {e}</div>', unsafe_allow_html=True)
                 else:
