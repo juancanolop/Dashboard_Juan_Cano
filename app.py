@@ -133,7 +133,7 @@ if selected_types:
 # =========================
 # 4. Fila: Skills + Logos vs Mapa
 # =========================
-col1, col2 = st.columns([2, 1])
+col1, col2 = st.columns([1, 1])
 
 # 🔴 Corregido: Eliminado espacio al final
 CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
@@ -236,7 +236,7 @@ with col2:
         if bounds:
             map_.fit_bounds(bounds)
 
-        st_folium(map_, height=500, width=800)
+        st_folium(map_, height=500, width=500)
     else:
         st.warning("No hay datos geográficos.")
 
