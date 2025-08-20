@@ -236,7 +236,7 @@ with col2:
         if bounds:
             map_.fit_bounds(bounds)
 
-        st_folium(map_, height=500, width=500)
+        st_folium(map_, height=500, use_container_width=True)
     else:
         st.warning("No hay datos geográficos.")
 
