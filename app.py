@@ -262,7 +262,7 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
                     if response.status_code != 200:
                         st.markdown('<div class="image-placeholder">🖼️ Imagen no disponible</div>', unsafe_allow_html=True)
                     else:
-                        st.image(image_url, caption=row["Project_Name"], use_column_width=True, clamp=True, channels="RGB")
+                        st.image(image_url, caption=row["Project_Name"], use_container_width=True, clamp=True, channels="RGB")
                         if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
                             st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
                 except Exception:
