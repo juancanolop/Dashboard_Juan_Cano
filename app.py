@@ -223,8 +223,8 @@ with col2:
 
         map_ = folium.Map(
             location=[lat_center, lon_center],
-            zoom_start=5,
-            tiles="CartoDB dark_matter"
+            zoom_start=7,
+            tiles="OpenStreetMap"
         )
 
         bounds = []
