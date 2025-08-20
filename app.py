@@ -126,7 +126,7 @@ if selected_types:
 # =========================
 col1, col2 = st.columns([1, 1])  # Mitad y mitad
 
-# URL base de Cloudinary (sin espacios)
+# URL base de Cloudinary
 CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
 
 # User-Agent para requests
@@ -134,26 +134,78 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 }
 
-# Paleta de colores por skill (opcional)
+# Paleta de colores para skills (¡sin grises!)
 SKILL_COLORS = {
-    "GIS": "#4285F4",
-    "Survey": "#FBBC05",
-    "Network Analysis": "#EA4335",
-    "CAD Drafting": "#34A853",
-    "Dashboard": "#FF6D01",
-    "Python": "#3776AB",
-    "Excel": "#217346",
-    "AutoCAD": "#0A97D9",
-    "Revit": "#C51152",
-    "Rhino": "#7D66DD",
-    "Grasshopper": "#1A1A1A",
-    "ArcGIS": "#228B22",
-    "QGIS": "#377EB8",
-    "Power BI": "#F2C811",
-    "Civil 3D": "#00A9CE",
-    "PMI": "#5855B8",
-    "LinkedIn": "#0077B5"
+    "GIS": "#4285F4",               # Azul Google
+    "Survey": "#FBBC05",            # Amarillo Google
+    "Network Analysis": "#EA4335",  # Rojo Google
+    "CAD Drafting": "#34A853",      # Verde Google
+    "Dashboard": "#FF6D01",         # Naranja profundo
+    "Python": "#3776AB",            # Azul Python
+    "Excel": "#217346",             # Verde Excel
+    "AutoCAD": "#0A97D9",           # Azul AutoCAD
+    "Revit": "#C51152",             # Rosa rojo Revit
+    "Rhino": "#7D66DD",             # Púrpura
+    "Grasshopper": "#1A1A1A",      # Negro elegante
+    "ArcGIS": "#228B22",            # Verde bosque
+    "QGIS": "#377EB8",              # Azul QGIS
+    "Power BI": "#F2C811",          # Amarillo Power BI
+    "Civil 3D": "#00A9CE",          # Cian industrial
+    "PMI": "#5855B8",               # Púrpura oscuro
+    "LinkedIn": "#0077B5",          # Azul LinkedIn
+    "Remote Sensing": "#005F5D",    # Verde oscuro
+    "Data Analysis": "#8E24AA",     # Púrpura fuerte
+    "Machine Learning": "#D81B60",  # Rosa brillante
+    "BIM": "#FFB300",               # Amarillo dorado
+    "Urban Planning": "#6D4C41",    # Marrón tierra
+    "Geodesign": "#00897B",         # Turquesa oscuro
+    "3D Modeling": "#5E35B1",       # Índigo
+    "Lidar": "#5D4037",             # Marrón chocolate
+    "Hydrology": "#0277BD",         # Azul cielo
+    "Infrastructure": "#757575",    # Gris industrial → vamos a cambiarlo
+    "Project Management": "#E65100",# Naranja oscuro
+    "Consulting": "#311B92",        # Púrpura profundo
+    "Feasibility Study": "#C0CA33", # Verde lima
+    "Environmental Impact": "#2E7D32", # Verde bosque
+    "Transportation": "#D84315",    # Rojo terracota
+    "Land Use": "#827717",          # Verde oliva
+    "Geospatial": "#006064",        # Verde azulado
+    "Topography": "#4E342E",        # Marrón oscuro
+    "Photogrammetry": "#BF360C",    # Rojo cobre
+    "Design": "#AD1457",            # Rosa vino
+    "Visualization": "#283593",     # Azul noche
+    "Planning": "#1B5E20",          # Verde oscuro
+    "Modeling": "#01579B",          # Azul acero
+    "Analysis": "#C62828",          # Rojo sangre
+    "Mapping": "#4A148C",           # Púrpura real
+    "Simulation": "#EF6C00",        # Naranja quemado
+    "Optimization": "#2E7D32",      # Verde profundo
+    "Reporting": "#455A64",         # Gris azulado → vamos a cambiarlo
+    "Stakeholder Engagement": "#B71C1C", # Rojo intenso
+    "Field Work": "#33691E",        # Verde oscuro
+    "Data Collection": "#E64A19",   # Naranja vivo
+    "Risk Assessment": "#C2185B",   # Rosa fuerte
 }
+
+# Asegurarnos de que ningún skill se quede en gris
+fallback_colors = [
+    "#D81B60", "#1E88E5", "#43A047", "#FB8C00", "#7CB342",
+    "#8E24AA", "#039BE5", "#66BB6A", "#FFA726", "#26A69A"
+]
+used_colors = set(SKILL_COLORS.values())
+available_fallbacks = [c for c in fallback_colors if c not in used_colors]
+color_index = 0
+
+# Asignar colores únicos a skills no definidos
+for skill in filtered_df["Skills"].dropna().str.split(", ").explode().str.strip().unique():
+    skill_clean = skill.strip()
+    if skill_clean not in SKILL_COLORS:
+        # Evitar colores ya usados
+        while color_index < len(available_fallbacks) - 1 and available_fallbacks[color_index] in used_colors:
+            color_index += 1
+        SKILL_COLORS[skill_clean] = available_fallbacks[color_index % len(available_fallbacks)]
+        used_colors.add(SKILL_COLORS[skill_clean])
+        color_index += 1
 
 with col1:
     # === SKILLS como etiquetas únicas ===
@@ -171,7 +223,7 @@ with col1:
         if skills_list:
             cols_skills = st.columns(min(len(skills_list), 6))
             for idx, skill in enumerate(skills_list):
-                color = SKILL_COLORS.get(skill, "#666666")
+                color = SKILL_COLORS.get(skill, "#1976D2")  # Azul por defecto si no está
                 with cols_skills[idx % 6]:
                     st.markdown(
                         f"""
@@ -247,14 +299,17 @@ with col2:
         lat_center = filtered_df["Latitud"].mean()
         lon_center = filtered_df["Longitud"].mean()
 
+        # Ajustar zoom según cantidad de proyectos
+        zoom_start = 12 if len(filtered_df) == 1 else 5
+
         map_ = folium.Map(
             location=[lat_center, lon_center],
-            zoom_start=5,
-            tiles="CartoDB positron",  # Estilo claro, como Google Maps
+            zoom_start=zoom_start,
+            tiles="CartoDB positron",
             control_scale=True
         )
 
-        # Añadir marcadores
+        # Añadir todos los marcadores
         for _, row in filtered_df.iterrows():
             folium.Marker(
                 [row["Latitud"], row["Longitud"]],
@@ -262,10 +317,8 @@ with col2:
                 icon=folium.Icon(color="darkblue", icon="map-marker")
             ).add_to(map_)
 
-        # Ajustar zoom automáticamente
-        if len(filtered_df) == 1:
-            map_.set_view([lat_center, lon_center], zoom=10)
-        else:
+        # Ajustar vista si hay más de un proyecto
+        if len(filtered_df) > 1:
             bounds = [[row["Latitud"], row["Longitud"]] for _, row in filtered_df.iterrows()]
             map_.fit_bounds(bounds, padding=(0.1, 0.1))
 
