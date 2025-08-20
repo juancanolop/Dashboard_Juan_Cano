@@ -283,7 +283,7 @@ with col1:
                 with cols_logos[idx % 6]:
                     if success:
                         try:
-                            st.image(img_url, width=60, use_container_width=False, clamp=True, channels="RGB")
+                            st.image(img_url, width=80, use_container_width=False, clamp=True, channels="RGB")
                         except:
                             st.markdown('<div class="warning-text">⚠️</div>', unsafe_allow_html=True)
                     else:
