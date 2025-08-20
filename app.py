@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 import requests
@@ -21,13 +20,6 @@ st.markdown("""
         margin: 1rem 0;
         border-bottom: 2px solid #07b9d1;
         padding-bottom: 0.5rem;
-    }
-    .logo-image {
-        max-width: 50px;
-        height: auto;
-        object-fit: contain;
-        border-radius: 5px;
-        border: 1px solid #34495e;
     }
     .cloudinary-image {
         max-width: 20vw;
@@ -57,7 +49,6 @@ st.markdown("""
 # =========================
 @st.cache_data
 def load_data():
-    # 🔴 Corregido: Eliminado espacio al final
     data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/main/data.csv"
     try:
         df = pd.read_csv(data_url)
@@ -133,87 +124,122 @@ if selected_types:
 # =========================
 # 4. Fila: Skills + Logos vs Mapa
 # =========================
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([1, 1])  # Mitad y mitad
 
-# 🔴 Corregido: Eliminado espacio al final
+# URL base de Cloudinary (sin espacios)
 CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
 
-# Agregar encabezado de User-Agent global
+# User-Agent para requests
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+}
+
+# Paleta de colores por skill (opcional)
+SKILL_COLORS = {
+    "GIS": "#4285F4",
+    "Survey": "#FBBC05",
+    "Network Analysis": "#EA4335",
+    "CAD Drafting": "#34A853",
+    "Dashboard": "#FF6D01",
+    "Python": "#3776AB",
+    "Excel": "#217346",
+    "AutoCAD": "#0A97D9",
+    "Revit": "#C51152",
+    "Rhino": "#7D66DD",
+    "Grasshopper": "#1A1A1A",
+    "ArcGIS": "#228B22",
+    "QGIS": "#377EB8",
+    "Power BI": "#F2C811",
+    "Civil 3D": "#00A9CE",
+    "PMI": "#5855B8",
+    "LinkedIn": "#0077B5"
 }
 
 with col1:
+    # === SKILLS como etiquetas únicas ===
     st.markdown('<div class="section-header">Skills</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Skills" in filtered_df.columns:
-        skills_data = filtered_df["Skills"].dropna().str.split(", ").explode()
-        if len(skills_data) > 0:
-            skills_counts = skills_data.value_counts()
-            fig = px.pie(
-                names=skills_counts.index,
-                values=skills_counts.values,
-                title="",
-                template="plotly_dark"
-            )
-            fig.update_layout(
-                font_color="#FAFAFA",
-                paper_bgcolor="#0E1117",
-                plot_bgcolor="#0E1117"
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        all_skills = set()
+        for skill_list in filtered_df["Skills"].dropna():
+            for skill in str(skill_list).split(","):
+                skill_clean = skill.strip().strip('"\'[] ')
+                if skill_clean:
+                    all_skills.add(skill_clean)
+
+        skills_list = sorted(all_skills)
+
+        if skills_list:
+            cols_skills = st.columns(min(len(skills_list), 6))
+            for idx, skill in enumerate(skills_list):
+                color = SKILL_COLORS.get(skill, "#666666")
+                with cols_skills[idx % 6]:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background-color: {color};
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 12px;
+                            text-align: center;
+                            font-size: 0.85rem;
+                            font-weight: 600;
+                            margin: 4px;
+                            min-width: 80px;
+                        ">
+                            {skill}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
         else:
-            st.info("No hay datos de Skills.")
+            st.info("No hay skills disponibles.")
     else:
-        st.warning("No hay datos para mostrar en el gráfico.")
+        st.warning("No hay datos de skills para mostrar.")
 
-    # Logos (mejorado con sanitización y verificación)
-st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
-if "Software" in filtered_df.columns:
-    all_software = set()
-    for software_list in filtered_df["Software"].dropna():
-        for software in str(software_list).split(","):
-            # Limpieza profunda
-            software = software.strip().strip('"\'[] ')
-            if not software:
-                continue
-            # Convertir a minúsculas y reemplazar espacios por guiones bajos
-            software_clean = software.replace(" ", "_").replace("-", "_").lower()
-            all_software.add(software_clean)
+    # === LOGOS ===
+    st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
+    if "Software" in filtered_df.columns:
+        all_software = set()
+        for software_list in filtered_df["Software"].dropna():
+            for software in str(software_list).split(","):
+                software_clean = software.strip().strip('"\'[] ').replace(" ", "_").replace("-", "_").lower()
+                if software_clean:
+                    all_software.add(software_clean)
 
-    software_logos = list(all_software)
-    if software_logos:
-        cols = st.columns(min(len(software_logos), 6))
-        for idx, software in enumerate(software_logos):
-            # Intentar con .jpg y .png
-            urls_to_try = [
-                f"{CLOUDINARY_BASE_URL}logos/{software}.jpg",
-                f"{CLOUDINARY_BASE_URL}logos/{software}.png"
-            ]
-            img_url = None
-            success = False
+        software_list = sorted(all_software)
 
-            for url in urls_to_try:
-                try:
-                    response = requests.head(url, timeout=5, headers=HEADERS)
-                    if response.status_code == 200:
-                        img_url = url
-                        success = True
-                        break
-                except Exception as e:
-                    continue
+        if software_list:
+            cols_logos = st.columns(min(len(software_list), 6))
+            for idx, software in enumerate(software_list):
+                urls_to_try = [
+                    f"{CLOUDINARY_BASE_URL}logos/{software}.jpg",
+                    f"{CLOUDINARY_BASE_URL}logos/{software}.png"
+                ]
+                img_url = None
+                success = False
 
-            with cols[idx % 6]:
-                if success:
+                for url in urls_to_try:
                     try:
-                        st.image(img_url, width=100, use_container_width=False, clamp=True, channels="RGB")
-                    except Exception as e:
-                        st.markdown(f'<div class="warning-text">⚠️ Error: {e}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="warning-text">⚠️ No encontrado: {software}</div>', unsafe_allow_html=True)
+                        response = requests.head(url, timeout=5, headers=HEADERS)
+                        if response.status_code == 200:
+                            img_url = url
+                            success = True
+                            break
+                    except:
+                        continue
+
+                with cols_logos[idx % 6]:
+                    if success:
+                        try:
+                            st.image(img_url, width=60, use_container_width=False, clamp=True, channels="RGB")
+                        except:
+                            st.markdown('<div class="warning-text">⚠️</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="warning-text">⚠️</div>', unsafe_allow_html=True)
+        else:
+            st.info("No hay software/logos disponibles.")
     else:
-        st.info("No hay software/logos disponibles.")
-else:
-    st.warning("No se encontró la columna 'Software' en los datos.")
+        st.warning("No se encontró la columna 'Software' en los datos.")
 
 with col2:
     st.markdown('<div class="section-header">Mapa</div>', unsafe_allow_html=True)
@@ -224,24 +250,31 @@ with col2:
         map_ = folium.Map(
             location=[lat_center, lon_center],
             zoom_start=5,
-            tiles="OpenStreetMap"
+            tiles="CartoDB positron",  # Estilo claro, como Google Maps
+            control_scale=True
         )
 
-        bounds = []
+        # Añadir marcadores
         for _, row in filtered_df.iterrows():
-            lat, lon = row["Latitud"], row["Longitud"]
-            folium.Marker([lat, lon], tooltip=row["Project_Name"]).add_to(map_)
-            bounds.append([lat, lon])
+            folium.Marker(
+                [row["Latitud"], row["Longitud"]],
+                tooltip=row["Project_Name"],
+                icon=folium.Icon(color="darkblue", icon="map-marker")
+            ).add_to(map_)
 
-        if bounds:
-            map_.fit_bounds(bounds)
+        # Ajustar zoom automáticamente
+        if len(filtered_df) == 1:
+            map_.set_view([lat_center, lon_center], zoom=10)
+        else:
+            bounds = [[row["Latitud"], row["Longitud"]] for _, row in filtered_df.iterrows()]
+            map_.fit_bounds(bounds, padding=(0.1, 0.1))
 
-        st_folium(map_, height=500, use_container_width=True)
+        st_folium(map_, height=600, use_container_width=True)
     else:
         st.warning("No hay datos geográficos.")
 
 # =========================
-# 5. Fila: Imágenes (Project Gallery style)
+# 5. Fila: Imágenes (Galería de Proyectos)
 # =========================
 st.markdown('<div class="section-header">Galería de Proyectos</div>', unsafe_allow_html=True)
 if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
@@ -257,16 +290,15 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
             with col:
                 image_url = row["image_link"].strip()
                 try:
-                    # Verificar si la imagen existe
                     response = requests.head(image_url, timeout=5, headers=HEADERS)
-                    if response.status_code != 200:
-                        st.markdown('<div class="image-placeholder">🖼️ Imagen no disponible</div>', unsafe_allow_html=True)
-                    else:
+                    if response.status_code == 200:
                         st.image(image_url, caption=row["Project_Name"], use_container_width=True, clamp=True, channels="RGB")
                         if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
                             st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div class="image-placeholder">🖼️ No disponible</div>', unsafe_allow_html=True)
                 except Exception:
-                    st.markdown('<div class="image-placeholder">⚠️ Error al cargar</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
     else:
         st.info("No hay enlaces de imágenes válidos disponibles.")
 else:
