@@ -123,17 +123,6 @@ if selected_categories:
     filtered_df = filtered_df[filtered_df["Category"].isin(selected_categories)]
 
 # =========================
-# 3. Filtrar datos
-# =========================
-filtered_df = df[df["Year"].isin(years_to_use)]
-
-if selected_industries:
-    filtered_df = filtered_df[filtered_df["Industry"].isin(selected_industries)]
-
-if selected_types:
-    filtered_df = filtered_df[filtered_df["Type"].isin(selected_types)]
-
-# =========================
 # 4. Fila: Skills + Logos vs Mapa
 # =========================
 col1, col2 = st.columns([1, 1])  # Mitad y mitad
