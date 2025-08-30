@@ -106,9 +106,21 @@ if selected_year_slider not in years_to_use:
 industries = sorted(df["Industry"].dropna().unique())
 selected_industries = st.sidebar.multiselect("Industrias", industries)
 
-# Filtro tipos
-types = sorted(df["Type"].dropna().unique()) if "Type" in df.columns else []
-selected_types = st.sidebar.multiselect("Tipos", types)
+# ✅ Filtro por CATEGORY (en lugar de Type)
+categories = sorted(df["Category"].dropna().unique()) if "Category" in df.columns else []
+selected_categories = st.sidebar.multiselect("Categorías", categories)
+
+# =========================
+# 3. Filtrar datos
+# =========================
+filtered_df = df[df["Year"].isin(years_to_use)]
+
+if selected_industries:
+    filtered_df = filtered_df[filtered_df["Industry"].isin(selected_industries)]
+
+# ✅ Aplicar filtro por Category (en lugar de Type)
+if selected_categories:
+    filtered_df = filtered_df[filtered_df["Category"].isin(selected_categories)]
 
 # =========================
 # 3. Filtrar datos
