@@ -329,31 +329,76 @@ with col2:
         st.warning("No hay datos geográficos.")
 
 # =========================
-# 5. Fila: Imágenes (Galería de Proyectos)
+# 5. Fila: Galería de Proyectos (aleatoria con "Cargar más")
 # =========================
 st.markdown('<div class="section-header">Galería de Proyectos</div>', unsafe_allow_html=True)
+
 if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
+    # Filtrar imágenes válidas
     valid_images = filtered_df[
         filtered_df["image_link"].apply(
             lambda x: pd.notna(x) and isinstance(x, str) and x.strip().startswith("http")
         )
-    ]
+    ].copy()
+
     if not valid_images.empty:
-        cols = st.columns(4)
-        for i, (_, row) in enumerate(valid_images.head(8).iterrows()):
-            col = cols[i % 4]
+        # ✅ Mezclar aleatoriamente (nuevo orden en cada recarga)
+        shuffled_images = valid_images.sample(frac=1, random_state=None).reset_index(drop=True)
+
+        # Número de imágenes por bloque
+        per_page = 8
+
+        # Mostrar primeras 8
+        st.write("### Destacados")
+        cols1 = st.columns(4)
+        for i, (_, row) in enumerate(shuffled_images.head(per_page).iterrows()):
+            col = cols1[i % 4]
             with col:
                 image_url = row["image_link"].strip()
                 try:
                     response = requests.head(image_url, timeout=5, headers=HEADERS)
                     if response.status_code == 200:
-                        st.image(image_url, caption=row["Project_Name"], use_container_width=True, clamp=True, channels="RGB")
+                        st.image(
+                            image_url,
+                            caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                            use_container_width=True,
+                            clamp=True,
+                            channels="RGB"
+                        )
                         if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
                             st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
                     else:
                         st.markdown('<div class="image-placeholder">🖼️ No disponible</div>', unsafe_allow_html=True)
                 except Exception:
                     st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
+
+        # Botón "Cargar más"
+        if len(shuffled_images) > per_page:
+            if st.button("🔍 Cargar más proyectos"):
+                st.write("### Más proyectos")
+                # Mostrar los siguientes 8 (o menos si no hay más)
+                more_images = shuffled_images.iloc[per_page:per_page*2]
+                cols2 = st.columns(4)
+                for i, (_, row) in enumerate(more_images.iterrows()):
+                    col = cols2[i % 4]
+                    with col:
+                        image_url = row["image_link"].strip()
+                        try:
+                            response = requests.head(image_url, timeout=5, headers=HEADERS)
+                            if response.status_code == 200:
+                                st.image(
+                                    image_url,
+                                    caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                                    use_container_width=True,
+                                    clamp=True,
+                                    channels="RGB"
+                                )
+                                if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                                    st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
+                            else:
+                                st.markdown('<div class="image-placeholder">🖼️ No disponible</div>', unsafe_allow_html=True)
+                        except Exception:
+                            st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
     else:
         st.info("No hay enlaces de imágenes válidos disponibles.")
 else:
