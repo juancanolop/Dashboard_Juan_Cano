@@ -309,10 +309,12 @@ with col2:
             control_scale=True
         )
 
-        # Añadir todos los marcadores
-        for _, row in filtered_df.iterrows():
+        # Filtrar filas con coordenadas válidas
+        valid_locations = filtered_df.dropna(subset=["Latitud", "Longitud"])
+
+        for _, row in valid_locations.iterrows():
             folium.Marker(
-                [row["Latitud"], row["Longitud"]],
+                location=[row["Latitud"], row["Longitud"]],
                 tooltip=row["Project_Name"],
                 icon=folium.Icon(color="darkblue", icon="map-marker")
             ).add_to(map_)
