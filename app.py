@@ -5,12 +5,12 @@ from streamlit_folium import st_folium
 import requests
 
 # =========================
-# 1. Configuración inicial
+# 1. Initial Configuration
 # =========================
 st.set_page_config(layout="wide")
 
 # =========================
-# 2. CSS Personalizado
+# 2. Custom CSS
 # =========================
 st.markdown("""
 <style>
@@ -45,7 +45,7 @@ st.markdown("""
         border-radius: 5px;
         font-size: 0.8rem;
     }
-    /* Botones de navegación */
+    /* Navigation buttons */
     .nav-button {
         display: block;
         padding: 10px 15px;
@@ -82,7 +82,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# 3. Sidebar de Navegación Juan David Cano
+# 3. Navigation Sidebar - Juan David Cano
 # =========================
 def create_navigation_sidebar():
     with st.sidebar:
@@ -96,14 +96,12 @@ def create_navigation_sidebar():
         </div>
         """, unsafe_allow_html=True)
 
-
         st.markdown("""
-        <a href="https://www.linkedin.com/in/juan-david-cano//" target="_blank" class="nav-button">
+        <a href="https://www.linkedin.com/in/juan-david-cano/" target="_blank" class="nav-button">
             LinkedIn
         </a>
         """, unsafe_allow_html=True)
 
-        
         st.markdown("""
         <a href="https://news.kronosgmt.com/" target="_blank" class="nav-button">
             Blog
@@ -118,11 +116,11 @@ def create_navigation_sidebar():
 
         st.markdown("<hr style='border: 1px solid #34495e;'>", unsafe_allow_html=True)
 
-# Llamar al sidebar
+# Call the sidebar function
 create_navigation_sidebar()
 
 # =========================
-# 4. Cargar los datos
+# 4. Load Data
 # =========================
 @st.cache_data
 def load_data():
@@ -136,38 +134,38 @@ def load_data():
             df["Year"] = df["Year"].dt.year
         return df
     except Exception as e:
-        st.error(f"Error al cargar el archivo CSV: {e}")
+        st.error(f"Error loading CSV file: {e}")
         return pd.DataFrame()
 
 df = load_data()
 if df.empty:
-    st.error("No se pudieron cargar los datos. Verifica la URL del CSV.")
+    st.error("Failed to load data. Please check the CSV URL.")
     st.stop()
 
 # =========================
-# 5. Filtros
+# 5. Filters
 # =========================
-# Año
+# Year
 years = sorted(df["Year"].dropna().unique())
 year_options = ["All"] + list(years)
 
 selected_years_sidebar = st.sidebar.multiselect(
-    "Filtrar años",
+    "Filter years",
     options=year_options,
     default=["All"]
 )
 
-# Timeline
-st.title("Dashboard de Proyectos")
+# Timeline slider
+st.title("Projects Dashboard")
 selected_year_slider = st.slider(
-    "Selecciona un año",
+    "Select a year",
     min_value=int(min(years)),
     max_value=int(max(years)),
     value=int(max(years)),
     key="timeline-slider"
 )
 
-# Lógica de sincronización
+# Sync logic between multiselect and slider
 if "All" in selected_years_sidebar:
     years_to_use = years
 else:
@@ -176,16 +174,16 @@ else:
 if selected_year_slider not in years_to_use:
     years_to_use.append(selected_year_slider)
 
-# Filtro industrias
+# Filter by industry
 industries = sorted(df["Industry"].dropna().unique())
-selected_industries = st.sidebar.multiselect("Industrias", industries)
+selected_industries = st.sidebar.multiselect("Industries", industries)
 
-# Filtro categorías
+# Filter by category
 categories = sorted(df["Category"].dropna().unique()) if "Category" in df.columns else []
-selected_categories = st.sidebar.multiselect("Categorías", categories)
+selected_categories = st.sidebar.multiselect("Categories", categories)
 
 # =========================
-# 6. Filtrar datos
+# 6. Apply Filters
 # =========================
 filtered_df = df[df["Year"].isin(years_to_use)]
 
@@ -196,7 +194,7 @@ if selected_categories:
     filtered_df = filtered_df[filtered_df["Category"].isin(selected_categories)]
 
 # =========================
-# 7. Fila: Skills + Logos vs Mapa
+# 7. Row: Skills + Logos vs Map
 # =========================
 col1, col2 = st.columns([1, 1])
 
@@ -227,7 +225,7 @@ SKILL_COLORS = {
     "Data Collection": "#E64A19", "Risk Assessment": "#C2185B"
 }
 
-# Asignar colores a skills no definidos
+# Assign fallback colors for undefined skills
 fallback_colors = ["#D81B60", "#1E88E5", "#43A047", "#FB8C00", "#7CB342"]
 used_colors = set(SKILL_COLORS.values())
 available_fallbacks = [c for c in fallback_colors if c not in used_colors]
@@ -240,7 +238,7 @@ for skill in filtered_df["Skills"].dropna().str.split(", ").explode().str.strip(
         color_index += 1
 
 with col1:
-    # Skills
+    # Skills Section
     st.markdown('<div class="section-header">Skills</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Skills" in filtered_df.columns:
         all_skills = {s.strip().strip('"\'[] ') for skill_list in filtered_df["Skills"].dropna() for s in str(skill_list).split(",") if s.strip()}
@@ -255,21 +253,18 @@ with col1:
                         {skill}
                     </div>""", unsafe_allow_html=True)
         else:
-            st.info("No hay skills disponibles.")
+            st.info("No skills available.")
     else:
-        st.warning("No hay datos de skills para mostrar.")
+        st.warning("No skill data to display.")
 
-# === LOGOS ===
+    # Software Logos Section
     st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
     if "Software" in filtered_df.columns:
         all_software = set()
         for software_list in filtered_df["Software"].dropna():
             for software in str(software_list).split(","):
-                # Limpieza profunda
-                software_clean = software.strip().strip('"\'[] ')
+                software_clean = software.strip().strip('"\'[] ').replace(" ", "_").replace("-", "_").lower()
                 if software_clean:
-                    # Normalizar: minúsculas, guiones bajos, sin espacios
-                    software_clean = software_clean.replace(" ", "_").replace("-", "_").lower()
                     all_software.add(software_clean)
 
         software_list = sorted(all_software)
@@ -277,18 +272,16 @@ with col1:
         if software_list:
             cols_logos = st.columns(min(len(software_list), 6))
             for idx, software in enumerate(software_list):
-                # Construir URLs (con y sin extensión)
                 urls_to_try = [
                     f"{CLOUDINARY_BASE_URL}logos/{software}.png",
                     f"{CLOUDINARY_BASE_URL}logos/{software}.jpg",
-                    f"{CLOUDINARY_BASE_URL}{software}.png",  # por si no está en /logos
+                    f"{CLOUDINARY_BASE_URL}{software}.png",
                     f"{CLOUDINARY_BASE_URL}{software}.jpg"
                 ]
 
                 img_url = None
                 success = False
 
-                # Probar cada URL
                 for url in urls_to_try:
                     try:
                         response = requests.head(url.strip(), timeout=5, headers=HEADERS)
@@ -296,28 +289,28 @@ with col1:
                             img_url = url.strip()
                             success = True
                             break
-                    except Exception as e:
-                        continue  # seguir intentando
+                    except Exception:
+                        continue
 
                 with cols_logos[idx % 6]:
                     if success and img_url:
                         try:
                             st.image(img_url, width=80, use_container_width=False, clamp=True, channels="RGB")
-                        except Exception as e:
+                        except Exception:
                             st.markdown('<div class="warning-text">⚠️</div>', unsafe_allow_html=True)
                     else:
-                        # Mostrar nombre del software si el logo falla
                         st.markdown(
                             f'<div style="font-size: 0.7rem; color: #b0b0b0; text-align: center;">{software}</div>',
                             unsafe_allow_html=True
                         )
         else:
-            st.info("No hay software disponible.")
+            st.info("No software available.")
     else:
-        st.warning("No se encontró la columna 'Software' en los datos.")
+        st.warning("No 'Software' column found in data.")
 
 with col2:
-    st.markdown('<div class="section-header">Mapa</div>', unsafe_allow_html=True)
+    # Map Section
+    st.markdown('<div class="section-header">Map</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Latitud" in filtered_df.columns and "Longitud" in filtered_df.columns:
         valid_locations = filtered_df.dropna(subset=["Latitud", "Longitud"])
         if not valid_locations.empty:
@@ -326,26 +319,30 @@ with col2:
             zoom_start = 12 if len(valid_locations) == 1 else 5
             map_ = folium.Map(location=[lat_center, lon_center], zoom_start=zoom_start, tiles="CartoDB positron", control_scale=True)
             for _, row in valid_locations.iterrows():
-                folium.Marker([row["Latitud"], row["Longitud"]], tooltip=row["Project_Name"], icon=folium.Icon(color="darkblue", icon="map-marker")).add_to(map_)
+                folium.Marker(
+                    [row["Latitud"], row["Longitud"]],
+                    tooltip=row["Project_Name"],
+                    icon=folium.Icon(color="darkblue", icon="map-marker")
+                ).add_to(map_)
             if len(valid_locations) > 1:
                 bounds = [[row["Latitud"], row["Longitud"]] for _, row in valid_locations.iterrows()]
                 map_.fit_bounds(bounds, padding=(0.1, 0.1))
             st_folium(map_, height=600, use_container_width=True)
         else:
-            st.warning("No hay coordenadas válidas.")
+            st.warning("No valid coordinates found.")
     else:
-        st.warning("No hay datos geográficos.")
+        st.warning("No geographic data available.")
 
 # =========================
-# 8. Galería con "Cargar más"
+# 8. Project Gallery with "Load More"
 # =========================
-st.markdown('<div class="section-header">Galería de Proyectos</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">Project Gallery</div>', unsafe_allow_html=True)
 if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
     valid_images = filtered_df[filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str) and x.startswith("http"))].copy()
     if not valid_images.empty:
         shuffled_images = valid_images.sample(frac=1, random_state=None).reset_index(drop=True)
         per_page = 8
-        st.write("### Destacados")
+        st.write("### Featured Projects")
         cols1 = st.columns(4)
         for i, (_, row) in enumerate(shuffled_images.head(per_page).iterrows()):
             col = cols1[i % 4]
@@ -353,16 +350,23 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
                 image_url = row["image_link"].strip()
                 try:
                     if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                        st.image(image_url, caption=f"{row['Project_Name']} ({int(row['Year'])})", use_container_width=True, clamp=True, channels="RGB")
+                        st.image(
+                            image_url,
+                            caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                            use_container_width=True,
+                            clamp=True,
+                            channels="RGB"
+                        )
                         if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
-                            st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
+                            st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
                     else:
-                        st.markdown('<div class="image-placeholder">🖼️ No disponible</div>', unsafe_allow_html=True)
-                except:
+                        st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
+                except Exception:
                     st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
+
         if len(shuffled_images) > per_page:
-            if st.button("🔍 Cargar más proyectos"):
-                st.write("### Más proyectos")
+            if st.button("🔍 Load More Projects"):
+                st.write("### More Projects")
                 more_images = shuffled_images.iloc[per_page:per_page*2]
                 cols2 = st.columns(4)
                 for i, (_, row) in enumerate(more_images.iterrows()):
@@ -371,24 +375,30 @@ if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns
                         image_url = row["image_link"].strip()
                         try:
                             if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                                st.image(image_url, caption=f"{row['Project_Name']} ({int(row['Year'])})", use_container_width=True, clamp=True, channels="RGB")
+                                st.image(
+                                    image_url,
+                                    caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                                    use_container_width=True,
+                                    clamp=True,
+                                    channels="RGB"
+                                )
                                 if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
-                                    st.markdown(f"[📖 Más Información]({row['Blog_Link']})", unsafe_allow_html=True)
+                                    st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
                             else:
-                                st.markdown('<div class="image-placeholder">🖼️ No disponible</div>', unsafe_allow_html=True)
-                        except:
+                                st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
+                        except Exception:
                             st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
     else:
-        st.info("No hay enlaces de imágenes válidos disponibles.")
+        st.info("No valid image links available.")
 else:
-    st.warning("No se encontró la columna 'image_link' o 'Project_Name' en los datos.")
+    st.warning("The 'image_link' or 'Project_Name' column was not found in the data.")
 
 # =========================
-# 9. Tabla de datos
+# 9. Data Table
 # =========================
-st.markdown('<div class="section-header">Tabla de datos</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">Data Table</div>', unsafe_allow_html=True)
 show_cols = [col for col in ["Project_Name", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
 if not filtered_df.empty and show_cols:
     st.dataframe(filtered_df[show_cols], use_container_width=True)
 else:
-    st.info("No hay datos para mostrar.")
+    st.info("No data to display.")
