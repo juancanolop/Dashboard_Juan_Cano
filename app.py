@@ -89,7 +89,7 @@ def create_navigation_sidebar():
         st.markdown("""
         <div class="logo-container">
             <a href="https://www.juandavidcano.com/" target="_blank">
-                <img src="https://res.cloudinary.com/dmf2pbdlq/image/upload/v1756601724/Profile_zwgeyn.png" 
+                <img src="https://res.cloudinary.com/dmf2pbdlq/image/upload/v1756604466/Untitled_design_y5c8ts.png" 
                      alt="Juan David Cano"
                      style="width: 280px; height: auto; border-radius: 10px; cursor: pointer;">
             </a>
