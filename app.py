@@ -50,7 +50,7 @@ st.markdown("""
         display: block;
         padding: 10px 15px;
         margin: 6px 0;
-        background-color: #1a73e8;
+        background-color: #1557b0;
         color: white !important;
         text-decoration: none;
         font-size: 0.95rem;
@@ -99,20 +99,20 @@ def create_navigation_sidebar():
 
         st.markdown("""
         <a href="https://www.linkedin.com/in/juan-david-cano//" target="_blank" class="nav-button">
-            📱 LinkedIn
+            LinkedIn
         </a>
         """, unsafe_allow_html=True)
 
         
         st.markdown("""
         <a href="https://news.kronosgmt.com/" target="_blank" class="nav-button">
-            📰 Blog
+            Blog
         </a>
         """, unsafe_allow_html=True)
 
         st.markdown("""
         <a href="https://calendly.com/juancano-kronosgmt/introduction-meeting" target="_blank" class="nav-button">
-            📞 Contacto
+            Contact Me
         </a>
         """, unsafe_allow_html=True)
 
