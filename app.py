@@ -158,30 +158,29 @@ selected_years_sidebar = st.sidebar.multiselect(
 # Timeline slider
 st.title("Projects Dashboard")
 selected_year_slider = st.slider(
-    "Select a year (slider)",
+    "Select a year",
     min_value=int(min(years)),
     max_value=int(max(years)),
     value=int(max(years)),
     key="timeline-slider"
 )
 
-# === LÓGICA DE FILTRADO CORREGIDA ===
-# Si "All" está seleccionado en el sidebar, usamos todos los años del sidebar (incluyendo todos)
+# Sync logic between multiselect and slider
 if "All" in selected_years_sidebar:
-    years_from_sidebar = years  # Todos los años disponibles
+    years_to_use = years
 else:
-    years_from_sidebar = [y for y in selected_years_sidebar if isinstance(y, int)]
+    years_to_use = [y for y in selected_years_sidebar if isinstance(y, int)]
 
-# Ahora, queremos que el resultado final sea la intersección entre:
-# - Los años del sidebar
-# - El año del slider (solo ese año)
-# Es decir: mostrar solo proyectos del año del slider, PERO solo si ese año está permitido en el sidebar
+if selected_year_slider not in years_to_use:
+    years_to_use.append(selected_year_slider)
 
-years_to_use = []
-if selected_year_slider in years_from_sidebar:
-    years_to_use = [selected_year_slider]
-else:
-    years_to_use = []  # No hay superposición → no mostrar datos
+# Filter by industry
+industries = sorted(df["Industry"].dropna().unique())
+selected_industries = st.sidebar.multiselect("Industries", industries)
+
+# Filter by category
+categories = sorted(df["Category"].dropna().unique()) if "Category" in df.columns else []
+selected_categories = st.sidebar.multiselect("Categories", categories)
 
 # =========================
 # 6. Apply Filters
