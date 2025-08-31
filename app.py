@@ -78,6 +78,16 @@ st.markdown("""
     .logo-container img:hover {
         transform: scale(1.03);
     }
+    .filter-info {
+        background-color: #1e2329;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        border-left: 4px solid #07b9d1;
+    }
+    .filter-info small {
+        color: #b0b0b0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -143,55 +153,117 @@ if df.empty:
     st.stop()
 
 # =========================
-# 5. Filters
+# 5. Filters - SISTEMA MEJORADO
 # =========================
-# Year
+# Get available years
 years = sorted(df["Year"].dropna().unique())
-year_options = ["All"] + list(years)
+min_year, max_year = int(min(years)), int(max(years))
 
-selected_years_sidebar = st.sidebar.multiselect(
-    "Filter years",
-    options=year_options,
-    default=["All"]
-)
-
-# Timeline slider
 st.title("Projects Dashboard")
-selected_year_slider = st.slider(
-    "Select a year",
-    min_value=int(min(years)),
-    max_value=int(max(years)),
-    value=int(max(years)),
-    key="timeline-slider"
-)
 
-# Sync logic between multiselect and slider
-if "All" in selected_years_sidebar:
-    years_to_use = years
-else:
-    years_to_use = [y for y in selected_years_sidebar if isinstance(y, int)]
+# Create two columns for the filter controls
+filter_col1, filter_col2 = st.columns([2, 1])
 
-if selected_year_slider not in years_to_use:
-    years_to_use.append(selected_year_slider)
+with filter_col1:
+    # Timeline slider
+    selected_year_slider = st.slider(
+        "Select a specific year to highlight",
+        min_value=min_year,
+        max_value=max_year,
+        value=max_year,
+        key="timeline-slider",
+        help="This will be included in the filter along with sidebar selections"
+    )
 
-# Filter by industry
-industries = sorted(df["Industry"].dropna().unique())
-selected_industries = st.sidebar.multiselect("Industries", industries)
+with filter_col2:
+    # Filter mode selector
+    filter_mode = st.radio(
+        "Filter Mode:",
+        options=["Include timeline year", "Only sidebar selection"],
+        index=0,
+        help="Choose how to combine timeline and sidebar filters"
+    )
 
-# Filter by category
-categories = sorted(df["Category"].dropna().unique()) if "Category" in df.columns else []
-selected_categories = st.sidebar.multiselect("Categories", categories)
+# Sidebar filters
+with st.sidebar:
+    st.markdown("### 🎯 **Filters**")
+    
+    # Year filter in sidebar
+    year_options = ["All"] + [str(year) for year in years]
+    selected_years_sidebar = st.multiselect(
+        "📅 Filter by years",
+        options=year_options,
+        default=["All"],
+        help="Select specific years or 'All' for all years"
+    )
+    
+    # Industry filter
+    industries = sorted(df["Industry"].dropna().unique())
+    selected_industries = st.multiselect(
+        "🏢 Industries", 
+        industries,
+        help="Filter by industry type"
+    )
+
+    # Category filter
+    categories = sorted(df["Category"].dropna().unique()) if "Category" in df.columns else []
+    if categories:
+        selected_categories = st.multiselect(
+            "📂 Categories", 
+            categories,
+            help="Filter by project category"
+        )
+    else:
+        selected_categories = []
 
 # =========================
-# 6. Apply Filters
+# 6. Apply Filters - LÓGICA MEJORADA
 # =========================
-filtered_df = df[df["Year"].isin(years_to_use)]
+def get_filtered_years(sidebar_years, timeline_year, mode):
+    """
+    Determina qué años usar basado en la configuración de filtros
+    """
+    # Si "All" está seleccionado en sidebar, usar todos los años
+    if "All" in sidebar_years:
+        sidebar_year_list = years
+    else:
+        # Convertir strings a integers para los años del sidebar
+        sidebar_year_list = [int(year) for year in sidebar_years if year.isdigit()]
+    
+    if mode == "Include timeline year":
+        # Combinar años del sidebar con el año del timeline
+        final_years = list(set(sidebar_year_list + [timeline_year]))
+    else:
+        # Solo usar selección del sidebar
+        final_years = sidebar_year_list
+    
+    return sorted(final_years)
+
+# Obtener años finales para filtrar
+final_years = get_filtered_years(selected_years_sidebar, selected_year_slider, filter_mode)
+
+# Mostrar información del filtro activo
+st.markdown(f"""
+<div class="filter-info">
+    <strong>🔍 Active Filter:</strong> Showing {len(final_years)} year(s): {', '.join(map(str, final_years[:5]))}{'...' if len(final_years) > 5 else ''}
+    <br><small>Timeline: {selected_year_slider} | Mode: {filter_mode}</small>
+</div>
+""", unsafe_allow_html=True)
+
+# Aplicar filtros
+filtered_df = df[df["Year"].isin(final_years)].copy()
 
 if selected_industries:
     filtered_df = filtered_df[filtered_df["Industry"].isin(selected_industries)]
 
 if selected_categories:
     filtered_df = filtered_df[filtered_df["Category"].isin(selected_categories)]
+
+# Mostrar estadísticas del filtro
+if not filtered_df.empty:
+    st.success(f"📊 Found **{len(filtered_df)} projects** matching your criteria")
+else:
+    st.warning("❌ No projects found with current filters. Try adjusting your selection.")
 
 # =========================
 # 7. Row: Skills + Logos vs Map
@@ -230,12 +302,13 @@ fallback_colors = ["#D81B60", "#1E88E5", "#43A047", "#FB8C00", "#7CB342"]
 used_colors = set(SKILL_COLORS.values())
 available_fallbacks = [c for c in fallback_colors if c not in used_colors]
 color_index = 0
-for skill in filtered_df["Skills"].dropna().str.split(", ").explode().str.strip().unique():
-    skill_clean = skill.strip()
-    if skill_clean not in SKILL_COLORS:
-        SKILL_COLORS[skill_clean] = available_fallbacks[color_index % len(available_fallbacks)]
-        used_colors.add(SKILL_COLORS[skill_clean])
-        color_index += 1
+if not filtered_df.empty and "Skills" in filtered_df.columns:
+    for skill in filtered_df["Skills"].dropna().str.split(", ").explode().str.strip().unique():
+        skill_clean = skill.strip()
+        if skill_clean not in SKILL_COLORS:
+            SKILL_COLORS[skill_clean] = available_fallbacks[color_index % len(available_fallbacks)]
+            used_colors.add(SKILL_COLORS[skill_clean])
+            color_index += 1
 
 with col1:
     # Skills Section
@@ -253,13 +326,13 @@ with col1:
                         {skill}
                     </div>""", unsafe_allow_html=True)
         else:
-            st.info("No skills available.")
+            st.info("No skills available for selected filters.")
     else:
         st.warning("No skill data to display.")
 
     # Software Logos Section
-    st.markdown('<div class="section-header">Logos</div>', unsafe_allow_html=True)
-    if "Software" in filtered_df.columns:
+    st.markdown('<div class="section-header">Software</div>', unsafe_allow_html=True)
+    if not filtered_df.empty and "Software" in filtered_df.columns:
         all_software = set()
         for software_list in filtered_df["Software"].dropna():
             for software in str(software_list).split(","):
@@ -304,13 +377,13 @@ with col1:
                             unsafe_allow_html=True
                         )
         else:
-            st.info("No software available.")
+            st.info("No software available for selected filters.")
     else:
         st.warning("No 'Software' column found in data.")
 
 with col2:
     # Map Section
-    st.markdown('<div class="section-header">Map</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Project Locations</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Latitud" in filtered_df.columns and "Longitud" in filtered_df.columns:
         valid_locations = filtered_df.dropna(subset=["Latitud", "Longitud"])
         if not valid_locations.empty:
@@ -318,18 +391,34 @@ with col2:
             lon_center = valid_locations["Longitud"].mean()
             zoom_start = 12 if len(valid_locations) == 1 else 5
             map_ = folium.Map(location=[lat_center, lon_center], zoom_start=zoom_start, tiles="CartoDB positron", control_scale=True)
+            
             for _, row in valid_locations.iterrows():
+                # Highlight projects from timeline year
+                color = "red" if row["Year"] == selected_year_slider else "darkblue"
+                popup_text = f"<b>{row['Project_Name']}</b><br>Year: {int(row['Year'])}<br>Industry: {row.get('Industry', 'N/A')}"
+                
                 folium.Marker(
                     [row["Latitud"], row["Longitud"]],
-                    tooltip=row["Project_Name"],
-                    icon=folium.Icon(color="darkblue", icon="map-marker")
+                    popup=folium.Popup(popup_text, max_width=200),
+                    tooltip=f"{row['Project_Name']} ({int(row['Year'])})",
+                    icon=folium.Icon(color=color, icon="map-marker")
                 ).add_to(map_)
+                
             if len(valid_locations) > 1:
                 bounds = [[row["Latitud"], row["Longitud"]] for _, row in valid_locations.iterrows()]
                 map_.fit_bounds(bounds, padding=(0.1, 0.1))
+            
             st_folium(map_, height=600, use_container_width=True)
+            
+            # Legend
+            st.markdown("""
+            <small>
+            🔴 <span style="color: red;">Timeline Year Projects</span> | 
+            🔵 <span style="color: blue;">Other Years</span>
+            </small>
+            """, unsafe_allow_html=True)
         else:
-            st.warning("No valid coordinates found.")
+            st.warning("No valid coordinates found for selected filters.")
     else:
         st.warning("No geographic data available.")
 
@@ -337,68 +426,119 @@ with col2:
 # 8. Project Gallery with "Load More"
 # =========================
 st.markdown('<div class="section-header">Project Gallery</div>', unsafe_allow_html=True)
-if "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
+if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
     valid_images = filtered_df[filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str) and x.startswith("http"))].copy()
     if not valid_images.empty:
-        shuffled_images = valid_images.sample(frac=1, random_state=None).reset_index(drop=True)
-        per_page = 8
-        st.write("### Featured Projects")
-        cols1 = st.columns(4)
-        for i, (_, row) in enumerate(shuffled_images.head(per_page).iterrows()):
-            col = cols1[i % 4]
-            with col:
-                image_url = row["image_link"].strip()
-                try:
-                    if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                        st.image(
-                            image_url,
-                            caption=f"{row['Project_Name']} ({int(row['Year'])})",
-                            use_container_width=True,
-                            clamp=True,
-                            channels="RGB"
-                        )
-                        if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
-                            st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
-                except Exception:
-                    st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
+        # Separate timeline year projects
+        timeline_projects = valid_images[valid_images["Year"] == selected_year_slider]
+        other_projects = valid_images[valid_images["Year"] != selected_year_slider]
+        
+        # Show timeline year projects first if any
+        if not timeline_projects.empty:
+            st.markdown(f"### 🎯 Projects from {selected_year_slider}")
+            cols_timeline = st.columns(4)
+            for i, (_, row) in enumerate(timeline_projects.head(8).iterrows()):
+                col = cols_timeline[i % 4]
+                with col:
+                    image_url = row["image_link"].strip()
+                    try:
+                        if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
+                            st.image(
+                                image_url,
+                                caption=f"⭐ {row['Project_Name']} ({int(row['Year'])})",
+                                use_container_width=True,
+                                clamp=True,
+                                channels="RGB"
+                            )
+                            if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                                st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
+                        else:
+                            st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
+                    except Exception:
+                        st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
+        
+        # Show other projects
+        if not other_projects.empty:
+            st.markdown("### 📸 Other Projects")
+            shuffled_images = other_projects.sample(frac=1, random_state=42).reset_index(drop=True)
+            per_page = 8
+            cols1 = st.columns(4)
+            for i, (_, row) in enumerate(shuffled_images.head(per_page).iterrows()):
+                col = cols1[i % 4]
+                with col:
+                    image_url = row["image_link"].strip()
+                    try:
+                        if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
+                            st.image(
+                                image_url,
+                                caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                                use_container_width=True,
+                                clamp=True,
+                                channels="RGB"
+                            )
+                            if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                                st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
+                        else:
+                            st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
+                    except Exception:
+                        st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
 
-        if len(shuffled_images) > per_page:
-            if st.button("🔍 Load More Projects"):
-                st.write("### More Projects")
-                more_images = shuffled_images.iloc[per_page:per_page*2]
-                cols2 = st.columns(4)
-                for i, (_, row) in enumerate(more_images.iterrows()):
-                    col = cols2[i % 4]
-                    with col:
-                        image_url = row["image_link"].strip()
-                        try:
-                            if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                                st.image(
-                                    image_url,
-                                    caption=f"{row['Project_Name']} ({int(row['Year'])})",
-                                    use_container_width=True,
-                                    clamp=True,
-                                    channels="RGB"
-                                )
-                                if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
-                                    st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
-                            else:
-                                st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
-                        except Exception:
-                            st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
+            if len(shuffled_images) > per_page:
+                if st.button("🔍 Load More Projects"):
+                    st.write("### Additional Projects")
+                    more_images = shuffled_images.iloc[per_page:per_page*2]
+                    cols2 = st.columns(4)
+                    for i, (_, row) in enumerate(more_images.iterrows()):
+                        col = cols2[i % 4]
+                        with col:
+                            image_url = row["image_link"].strip()
+                            try:
+                                if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
+                                    st.image(
+                                        image_url,
+                                        caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                                        use_container_width=True,
+                                        clamp=True,
+                                        channels="RGB"
+                                    )
+                                    if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                                        st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
+                                else:
+                                    st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
+                            except Exception:
+                                st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
     else:
-        st.info("No valid image links available.")
+        st.info("No valid image links available for selected filters.")
 else:
-    st.warning("The 'image_link' or 'Project_Name' column was not found in the data.")
+    st.warning("No projects found with current filter selection.")
 
 # =========================
 # 9. Data Table
 # =========================
-st.markdown('<div class="section-header">Data Table</div>', unsafe_allow_html=True)
-show_cols = [col for col in ["Project_Name", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
+st.markdown('<div class="section-header">Project Details</div>', unsafe_allow_html=True)
+show_cols = [col for col in ["Project_Name", "Year", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
 if not filtered_df.empty and show_cols:
-    st.dataframe(filtered_df[show_cols], use_container_width=True)
+    # Add visual indicator for timeline year
+    display_df = filtered_df[show_cols].copy()
+    if "Year" in display_df.columns:
+        display_df["Year"] = display_df["Year"].apply(lambda x: f"⭐ {int(x)}" if x == selected_year_slider else str(int(x)))
+    
+    st.dataframe(
+        display_df, 
+        use_container_width=True,
+        height=400
+    )
+    
+    # Summary statistics
+    if len(filtered_df) > 0:
+        col_stats1, col_stats2, col_stats3 = st.columns(3)
+        with col_stats1:
+            st.metric("Total Projects", len(filtered_df))
+        with col_stats2:
+            timeline_count = len(filtered_df[filtered_df["Year"] == selected_year_slider])
+            st.metric(f"Projects in {selected_year_slider}", timeline_count)
+        with col_stats3:
+            year_range = f"{filtered_df['Year'].min():.0f}-{filtered_df['Year'].max():.0f}"
+            st.metric("Year Range", year_range)
 else:
-    st.info("No data to display.")
+    st.info("No data to display with current filters.")
