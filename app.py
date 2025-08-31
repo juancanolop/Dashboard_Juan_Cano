@@ -82,61 +82,36 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# 3. Sidebar de Navegación Kronos GMT
+# 3. Sidebar de Navegación Juan David Cano
 # =========================
 def create_navigation_sidebar():
     with st.sidebar:
         st.markdown("""
         <div class="logo-container">
-            <a href="https://kronosgmt.com" target="_blank">
-                <img src="https://res.cloudinary.com/dmbgxvfo0/image/upload/v1754540320/Logos_Kronos_PNG-04_nxdbz3.png" 
-                     alt="Kronos GMT Logo"
+            <a href="https://www.juandavidcano.com/" target="_blank">
+                <img src="https://res.cloudinary.com/dmf2pbdlq/image/upload/v1756601724/Profile_zwgeyn.png" 
+                     alt="Juan David Cano"
                      style="width: 280px; height: auto; border-radius: 10px; cursor: pointer;">
             </a>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("<h3 style='text-align: center; color: #07b9d1;'>Servicios</h3>", unsafe_allow_html=True)
-
-        with st.expander("🔍 Ver servicios", expanded=True):
-            st.markdown("""
-            <a href="https://www.kronosgmt.com/3D-rendering" target="_blank" class="nav-button">
-                🖼️ 3D Rendering
-            </a>
-            """, unsafe_allow_html=True)
-
-            st.markdown("""
-            <a href="https://www.kronosgmt.com/CAD-drafting" target="_blank" class="nav-button">
-                📐 CAD Drafting
-            </a>
-            """, unsafe_allow_html=True)
-
-            st.markdown("""
-            <a href="https://www.kronosgmt.com/takeoffs-schedules" target="_blank" class="nav-button">
-                📊 Takeoffs & Schedules
-            </a>
-            """, unsafe_allow_html=True)
-
-            st.markdown("""
-            <a href="https://www.kronosgmt.com/GIS-mapping" target="_blank" class="nav-button">
-                🌍 GIS Mapping
-            </a>
-            """, unsafe_allow_html=True)
-
-            st.markdown("""
-            <a href="https://www.kronosgmt.com/automation-workflow-optimization" target="_blank" class="nav-button">
-                ⚙️ Automation & Workflow Optimization
-            </a>
-            """, unsafe_allow_html=True)
 
         st.markdown("""
+        <a href="https://www.linkedin.com/in/juan-david-cano//" target="_blank" class="nav-button">
+            📱 LinkedIn
+        </a>
+        """, unsafe_allow_html=True)
+
+        
+        st.markdown("""
         <a href="https://news.kronosgmt.com/" target="_blank" class="nav-button">
-            📰 Noticias
+            📰 Blog
         </a>
         """, unsafe_allow_html=True)
 
         st.markdown("""
-        <a href="https://www.kronosgmt.com/#contact" target="_blank" class="nav-button">
+        <a href="https://calendly.com/juancano-kronosgmt/introduction-meeting" target="_blank" class="nav-button">
             📞 Contacto
         </a>
         """, unsafe_allow_html=True)
