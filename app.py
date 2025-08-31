@@ -165,35 +165,23 @@ selected_year_slider = st.slider(
     key="timeline-slider"
 )
 
-# === LÓGICA DE FILTRADO: Intersección entre sidebar y slider ===
+# === LÓGICA DE FILTRADO CORREGIDA ===
+# Si "All" está seleccionado en el sidebar, usamos todos los años del sidebar (incluyendo todos)
 if "All" in selected_years_sidebar:
-    years_from_sidebar = years
+    years_from_sidebar = years  # Todos los años disponibles
 else:
     years_from_sidebar = [y for y in selected_years_sidebar if isinstance(y, int)]
 
-# Solo incluir el año del slider si está en los seleccionados del sidebar
-years_to_use = [selected_year_slider] if selected_year_slider in years_from_sidebar else []
+# Ahora, queremos que el resultado final sea la intersección entre:
+# - Los años del sidebar
+# - El año del slider (solo ese año)
+# Es decir: mostrar solo proyectos del año del slider, PERO solo si ese año está permitido en el sidebar
 
-# Si no hay años comunes, mostrar advertencia y detener
-if not years_to_use:
-    st.warning("⚠️ No data matches the selected years. Adjust your filters.")
-    st.stop()
-
-# --- Industry Filter (safe) ---
-if "Industry" in df.columns:
-    industries = sorted(df["Industry"].dropna().unique())
-    selected_industries = st.sidebar.multiselect("Industries", industries)
+years_to_use = []
+if selected_year_slider in years_from_sidebar:
+    years_to_use = [selected_year_slider]
 else:
-    selected_industries = []  # Definir vacío si no existe la columna
-    st.sidebar.info("No 'Industry' column in data.")
-
-# --- Category Filter (safe) ---
-if "Category" in df.columns:
-    categories = sorted(df["Category"].dropna().unique())
-    selected_categories = st.sidebar.multiselect("Categories", categories)
-else:
-    selected_categories = []  # Definir vacío si no existe
-    st.sidebar.info("No 'Category' column in data.")
+    years_to_use = []  # No hay superposición → no mostrar datos
 
 # =========================
 # 6. Apply Filters
