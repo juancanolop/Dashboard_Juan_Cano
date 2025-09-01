@@ -1,69 +1,62 @@
-👋 Hi, I'm [Tu Nombre]
-Civil Engineer | Project Manager | CAD/BIM Specialist
+# Juan David Cano  
 
-I am a passionate and results-driven Civil Engineer with strong expertise in land development, transportation, project management, and construction supervision.
-I combine engineering knowledge, modern design tools, and leadership skills to deliver efficient and high-quality solutions.
+🎯 **Civil Engineer | Project Manager | CAD/BIM Developer | Data Enthusiast**  
 
-🏗️ About Me
+I'm a passionate **Civil Engineer** with a strong background in **land development, infrastructure design, and project management**.  
+With over **10 years of experience** in **construction and project coordination**, I combine **technical expertise** with **innovative solutions** to deliver efficient and high-quality results.  
 
-🎓 Bachelor's Degree in Civil Engineering – Focused on structural design, geotechnics, and transportation systems.
+---
 
-🎓 Specialization in Transportation & Highway Engineering – Expertise in geometric design, traffic analysis, and pavement engineering.
+## 🧩 About Me  
+- 🎓 **Bachelor’s in Civil Engineering** – Focused on structural design, geotechnics, and hydraulics.  
+- 🎓 **Specialization in Transportation & Highway Engineering** – Expertise in roadway design and traffic analysis.  
+- 🎓 **Specialization in Construction & Infrastructure Project Management** *(PMI PMBOK® 6 methodology)*.  
+- 🎓 **Diploma in Project Management and Construction Works** *(80 hours)*.  
+- 💻 Passionate about **CAD automation**, **BIM modeling**, and **Python-based tools** for engineering workflows.  
 
-🎓 Specialization in Construction & Infrastructure Project Management – Based on PMI PMBOK® Guide 6th Edition methodology.
+---
 
-🎓 Diploma in Project Management & Construction Works – 80 hours focused on practical project planning and control.
+## 🛠️ Tech Stack  
 
-💡 What I Do
+### **Programming & Data**
+- Python 🐍 (Pandas, NumPy, Matplotlib, Streamlit)
+- CAD Automation (Pyautocad, Dynamo, Grasshopper)
+- Data visualization & dashboards
 
-Project Management – Planning, scheduling, and controlling engineering and construction projects.
+### **CAD & BIM**
+- AutoCAD LT | Civil 3D | Revit  
+- CAD automation and scripting  
+- BIM modeling and coordination  
 
-Transportation Engineering – Geometric road design, traffic studies, and pavement evaluations.
+### **GIS & Land Development**
+- QGIS | ArcGIS  
+- GeoJSON, shapefiles, and spatial data visualization  
+- Land subdivision, utilities, and topographic analysis  
 
-Land Development – Residential, commercial, and infrastructure project design and supervision.
+---
 
-CAD/BIM Expertise – Over 15 years of experience in AutoCAD, Revit, and Civil 3D.
+## 📂 Featured Projects  
+Here are some of the engineering and software projects I'm currently working on:
 
-Process Optimization – Developed methods that reduce design time by up to 70%.
+- 🏗 **Pool Hydraulic Simulation App** *(Python)*  
+  Calculates **Total Dynamic Head (TDH)** and verifies compliance with **2023 Florida Building Code (FBC)**.  
 
-🛠️ Technical Skills
-Software & Tools
+- 🌎 **QGIS App for Plumbing Systems** *(Python + QGIS)*  
+  Automates pressure and velocity calculations for gravity, suction, and pressurized networks.  
 
-Design & Drafting: AutoCAD, Civil 3D, Revit, SketchUp
+- 📊 **Dynamic Project Dashboard** *(Streamlit)*  
+  Visualizes project timelines, schedules, and geospatial data for **construction planning**.  
 
-Project Management: MS Project, Primavera P6, Asana, Jira
+---
 
-GIS & Visualization: QGIS, ArcGIS, Streamlit Dashboards, Plotly
+## 📫 Connect with Me  
 
-Programming: Python, VBA, Streamlit apps for engineering calculations
+- 💼 [LinkedIn]([https:///www.linkedin.com/in/juan-david-cano/])  
+- 📧 Email: juancano@kronosgmt.com.com
+- 📧 Email: juadcanolop@gmail.com
+- 🌐 [Website]([https://www.juandavidcano.com])
+- 🌐 [Portfolio]([https://[juan-cano-dashboard.streamlit.app/])
 
-Core Competencies
+---
 
-Land Development Planning
-
-Hydraulics & Hydrology
-
-Geotechnical Design
-
-Construction Scheduling
-
-Cost Estimation & Budget Control
-
-Team Leadership & Coordination
-
-📌 Featured Projects
-
-🏊 Designed 80+ aquatic projects including commercial pools, lazy rivers, fountains, and splash pads across Florida.
-
-🌎 Developed an internal BIM-CAD optimization method that reduced critical path drawing time by 70%.
-
-🚧 Coordinated multidisciplinary teams for highway, drainage, and land development projects.
-
-📫 Let's Connect
-
-📧 Email: [tuemail@email.com
-]
-
-💼 LinkedIn: linkedin.com/in/tu-perfil
-
-🌐 Portfolio: www.tuportafolio.com
+*“Transforming ideas into efficient engineering solutions.”*  
