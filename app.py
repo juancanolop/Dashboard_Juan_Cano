@@ -207,7 +207,7 @@ def expand_projects_by_duration(df):
                     # Por seguridad, sumamos 1 año si el residuo es significativo
                     end_year += 1
 
-                years_affected = list(range(start_year, end_year + 1)
+                years_affected = list(range(start_year, end_year + 1))
                 
                 # Crear una fila para cada año afectado
                 for year in years_affected:
