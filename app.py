@@ -130,7 +130,7 @@ def create_navigation_sidebar():
 create_navigation_sidebar()
 
 # =========================
-# 4. Load Data
+# 4. Load Data with Project Duration Logic
 # =========================
 @st.cache_data
 def load_data():
@@ -138,19 +138,154 @@ def load_data():
     try:
         df = pd.read_csv(data_url)
         df.columns = df.columns.str.strip()
+        
+        # Process Year column
         if df["Year"].dtype == "object":
             df["Year"] = pd.to_datetime(df["Year"], errors='coerce').dt.year
         elif "datetime" in str(df["Year"].dtype):
             df["Year"] = df["Year"].dt.year
+            
         return df
     except Exception as e:
         st.error(f"Error loading CSV file: {e}")
         return pd.DataFrame()
 
+def expand_projects_by_duration(df):
+    """
+    Expande los proyectos para que aparezcan en todos los años donde estuvieron activos
+    basándose en la fecha de inicio y duración en meses
+    """
+    if df.empty:
+        return df
+    
+    # Verificar si tenemos las columnas necesarias para duración
+    duration_col = None
+    start_date_col = None
+    
+    # Buscar columnas de duración (posibles nombres)
+    duration_candidates = ['Duration_Months', 'Duration', 'Months', 'Project_Duration']
+    for col in duration_candidates:
+        if col in df.columns:
+            duration_col = col
+            break
+    
+    # Buscar columnas de fecha de inicio
+    start_date_candidates = ['Start_Date', 'Project_Start', 'Begin_Date', 'Start']
+    for col in start_date_candidates:
+        if col in df.columns:
+            start_date_col = col
+            break
+    
+    # Si no tenemos duración pero tenemos fecha de inicio y año, intentar con Year como base
+    if duration_col and start_date_col:
+        expanded_rows = []
+        
+        for idx, row in df.iterrows():
+            try:
+                # Obtener duración en meses
+                duration_months = row[duration_col]
+                if pd.isna(duration_months) or duration_months <= 0:
+                    # Si no hay duración válida, usar el proyecto tal como está
+                    expanded_rows.append(row.copy())
+                    continue
+                
+                duration_months = int(float(duration_months))
+                
+                # Determinar año de inicio
+                start_year = row['Year']
+                if pd.isna(start_year):
+                    expanded_rows.append(row.copy())
+                    continue
+                
+                start_year = int(start_year)
+                
+                # Calcular años afectados
+                # Asumimos que el proyecto empieza en enero del año indicado
+                # Si hay información más específica de mes, se puede mejorar
+                years_affected = []
+                
+                # Añadir año de inicio
+                years_affected.append(start_year)
+                
+                # Si la duración excede 12 meses, añadir años adicionales
+                if duration_months > 12:
+                    additional_years = (duration_months - 1) // 12
+                    for i in range(1, additional_years + 1):
+                        years_affected.append(start_year + i)
+                
+                # Crear una fila para cada año afectado
+                for year in years_affected:
+                    new_row = row.copy()
+                    new_row['Year'] = year
+                    new_row['Original_Year'] = start_year  # Mantener referencia al año original
+                    new_row['Project_Span'] = f"{start_year}-{max(years_affected)}" if len(years_affected) > 1 else str(start_year)
+                    expanded_rows.append(new_row)
+                    
+            except (ValueError, TypeError):
+                # Si hay error procesando duración, usar fila original
+                expanded_rows.append(row.copy())
+        
+        # Crear DataFrame expandido
+        expanded_df = pd.DataFrame(expanded_rows)
+        
+        # Mensaje informativo sobre expansión
+        original_count = len(df)
+        expanded_count = len(expanded_df)
+        if expanded_count > original_count:
+            st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries")
+        
+        return expanded_df
+    
+    elif duration_col:  # Solo tenemos duración, usar Year como base
+        expanded_rows = []
+        
+        for idx, row in df.iterrows():
+            try:
+                duration_months = row[duration_col]
+                if pd.isna(duration_months) or duration_months <= 0:
+                    expanded_rows.append(row.copy())
+                    continue
+                
+                duration_months = int(float(duration_months))
+                start_year = int(row['Year'])
+                
+                # Calcular años de duración del proyecto
+                end_year = start_year
+                if duration_months > 12:
+                    end_year = start_year + ((duration_months - 1) // 12)
+                
+                # Crear entradas para cada año
+                for year in range(start_year, end_year + 1):
+                    new_row = row.copy()
+                    new_row['Year'] = year
+                    new_row['Original_Year'] = start_year
+                    new_row['Project_Span'] = f"{start_year}-{end_year}" if end_year > start_year else str(start_year)
+                    expanded_rows.append(new_row)
+                    
+            except (ValueError, TypeError):
+                expanded_rows.append(row.copy())
+        
+        expanded_df = pd.DataFrame(expanded_rows)
+        
+        # Mensaje informativo
+        original_count = len(df)
+        expanded_count = len(expanded_df)
+        if expanded_count > original_count:
+            st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries ({expanded_count - original_count} additional entries)")
+        
+        return expanded_df
+    
+    else:
+        # No hay información de duración, retornar DataFrame original
+        return df
+
 df = load_data()
 if df.empty:
     st.error("Failed to load data. Please check the CSV URL.")
     st.stop()
+
+# Apply duration expansion logic
+df = expand_projects_by_duration(df)
 
 # =========================
 # 5. Filters - SISTEMA MEJORADO
@@ -395,7 +530,13 @@ with col2:
             for _, row in valid_locations.iterrows():
                 # Highlight projects from timeline year
                 color = "red" if row["Year"] == selected_year_slider else "darkblue"
-                popup_text = f"<b>{row['Project_Name']}</b><br>Year: {int(row['Year'])}<br>Industry: {row.get('Industry', 'N/A')}"
+                
+                # Enhanced popup with project span info
+                popup_text = f"<b>{row['Project_Name']}</b><br>Year: {int(row['Year'])}"
+                if 'Project_Span' in row and pd.notna(row['Project_Span']):
+                    popup_text += f"<br>Duration: {row['Project_Span']}"
+                if 'Industry' in row:
+                    popup_text += f"<br>Industry: {row.get('Industry', 'N/A')}"
                 
                 folium.Marker(
                     [row["Latitud"], row["Longitud"]],
@@ -443,9 +584,14 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                     image_url = row["image_link"].strip()
                     try:
                         if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
+                            # Enhanced caption with duration info
+                            caption_text = f"⭐ {row['Project_Name']} ({int(row['Year'])})"
+                            if 'Project_Span' in row and pd.notna(row['Project_Span']) and str(row['Project_Span']) != str(int(row['Year'])):
+                                caption_text += f" [Duration: {row['Project_Span']}]"
+                            
                             st.image(
                                 image_url,
-                                caption=f"⭐ {row['Project_Name']} ({int(row['Year'])})",
+                                caption=caption_text,
                                 use_container_width=True,
                                 clamp=True,
                                 channels="RGB"
@@ -469,9 +615,14 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                     image_url = row["image_link"].strip()
                     try:
                         if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
+                            # Enhanced caption for other projects too
+                            caption_text = f"{row['Project_Name']} ({int(row['Year'])})"
+                            if 'Project_Span' in row and pd.notna(row['Project_Span']) and str(row['Project_Span']) != str(int(row['Year'])):
+                                caption_text += f" [Duration: {row['Project_Span']}]"
+                            
                             st.image(
                                 image_url,
-                                caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                                caption=caption_text,
                                 use_container_width=True,
                                 clamp=True,
                                 channels="RGB"
@@ -494,9 +645,14 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                             image_url = row["image_link"].strip()
                             try:
                                 if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
+                                    # Enhanced caption for load more section
+                                    caption_text = f"{row['Project_Name']} ({int(row['Year'])})"
+                                    if 'Project_Span' in row and pd.notna(row['Project_Span']) and str(row['Project_Span']) != str(int(row['Year'])):
+                                        caption_text += f" [Duration: {row['Project_Span']}]"
+                                    
                                     st.image(
                                         image_url,
-                                        caption=f"{row['Project_Name']} ({int(row['Year'])})",
+                                        caption=caption_text,
                                         use_container_width=True,
                                         clamp=True,
                                         channels="RGB"
@@ -516,12 +672,16 @@ else:
 # 9. Data Table
 # =========================
 st.markdown('<div class="section-header">Project Details</div>', unsafe_allow_html=True)
-show_cols = [col for col in ["Project_Name", "Year", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
+show_cols = [col for col in ["Project_Name", "Year", "Project_Span", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
 if not filtered_df.empty and show_cols:
-    # Add visual indicator for timeline year
+    # Add visual indicator for timeline year and handle project span
     display_df = filtered_df[show_cols].copy()
     if "Year" in display_df.columns:
         display_df["Year"] = display_df["Year"].apply(lambda x: f"⭐ {int(x)}" if x == selected_year_slider else str(int(x)))
+    
+    # Rename Project_Span column if it exists
+    if "Project_Span" in display_df.columns:
+        display_df = display_df.rename(columns={"Project_Span": "Duration"})
     
     st.dataframe(
         display_df, 
@@ -529,9 +689,9 @@ if not filtered_df.empty and show_cols:
         height=400
     )
     
-    # Summary statistics
+    # Enhanced summary statistics
     if len(filtered_df) > 0:
-        col_stats1, col_stats2, col_stats3 = st.columns(3)
+        col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
         with col_stats1:
             st.metric("Total Projects", len(filtered_df))
         with col_stats2:
@@ -540,5 +700,9 @@ if not filtered_df.empty and show_cols:
         with col_stats3:
             year_range = f"{filtered_df['Year'].min():.0f}-{filtered_df['Year'].max():.0f}"
             st.metric("Year Range", year_range)
+        with col_stats4:
+            # Count unique projects (to avoid counting expanded projects multiple times)
+            unique_projects = filtered_df['Project_Name'].nunique() if 'Project_Name' in filtered_df.columns else len(filtered_df)
+            st.metric("Unique Projects", unique_projects)
 else:
     st.info("No data to display with current filters.")
