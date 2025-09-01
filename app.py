@@ -228,11 +228,10 @@ def expand_projects_by_duration(df):
         # Crear DataFrame expandido
         expanded_df = pd.DataFrame(expanded_rows)
         
-        # Mensaje informativo sobre expansión
-        original_count = len(df)
-        expanded_count = len(expanded_df)
-        if expanded_count > original_count:
-            st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries")
+        # Opción 1: Remover completamente el mensaje
+        # (descomenta la línea de abajo si quieres ver el mensaje)
+        # if expanded_count > original_count:
+        #     st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries")
         
         return expanded_df
     
@@ -267,11 +266,12 @@ def expand_projects_by_duration(df):
         
         expanded_df = pd.DataFrame(expanded_rows)
         
-        # Mensaje informativo
-        original_count = len(df)
-        expanded_count = len(expanded_df)
-        if expanded_count > original_count:
-            st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries ({expanded_count - original_count} additional entries)")
+        # Opción 1: Remover completamente el mensaje
+        # (descomenta las líneas de abajo si quieres ver el mensaje)
+        # original_count = len(df)
+        # expanded_count = len(expanded_df)
+        # if expanded_count > original_count:
+        #     st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries ({expanded_count - original_count} additional entries)")
         
         return expanded_df
     
