@@ -232,7 +232,7 @@ def expand_projects_by_duration(df):
         original_count = len(df)
         expanded_count = len(expanded_df)
         if expanded_count > original_count:
-            #st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries")
+            st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries")
         
         return expanded_df
     
