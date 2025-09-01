@@ -199,19 +199,9 @@ def expand_projects_by_duration(df):
                 
                 start_year = int(start_year)
                 
-                # Calcular años afectados
-                # Asumimos que el proyecto empieza en enero del año indicado
-                # Si hay información más específica de mes, se puede mejorar
-                years_affected = []
-                
-                # Añadir año de inicio
-                years_affected.append(start_year)
-                
-                # Si la duración excede 12 meses, añadir años adicionales
-                if duration_months > 12:
-                    additional_years = (duration_months - 1) // 12
-                    for i in range(1, additional_years + 1):
-                        years_affected.append(start_year + i)
+                # Calcular años afectados usando ceil(duration_months / 12)
+                num_years = (duration_months + 11) // 12  # Esto es ceil(duration_months / 12)
+                years_affected = [start_year + i for i in range(int(num_years))]
                 
                 # Crear una fila para cada año afectado
                 for year in years_affected:
