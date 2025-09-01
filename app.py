@@ -199,14 +199,8 @@ def expand_projects_by_duration(df):
                 
                 start_year = int(start_year)
                 
-                # Calcular el año final real
-                end_year = start_year + (duration_months - 1) // 12
-                # Si hay residuo, puede que termine en el año siguiente
-                if duration_months % 12 > 0:
-                    # Asumimos que el proyecto termina en algún momento del año
-                    # Por seguridad, sumamos 1 año si el residuo es significativo
-                    end_year += 1
-
+                # Calcular año final como start_year + (duration_months // 12)
+                end_year = start_year + (duration_months // 12)
                 years_affected = list(range(start_year, end_year + 1))
                 
                 # Crear una fila para cada año afectado
