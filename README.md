@@ -51,11 +51,11 @@ Here are some of the engineering and software projects I'm currently working on:
 
 ## 📫 Connect with Me  
 
-- 💼 [LinkedIn]([https:///www.linkedin.com/in/juan-david-cano/])  
+- 💼 [LinkedIn](https:///www.linkedin.com/in/juan-david-cano/)  
 - 📧 Email: juancano@kronosgmt.com.com
 - 📧 Email: juadcanolop@gmail.com
-- 🌐 [Website]([https://www.juandavidcano.com])
-- 🌐 [Portfolio]([https://[juan-cano-dashboard.streamlit.app/])
+- 🌐 [Website](https://www.juandavidcano.com)
+- 🌐 [Portfolio](https://[juan-cano-dashboard.streamlit.app/)
 
 ---
 
