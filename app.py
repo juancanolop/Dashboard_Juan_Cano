@@ -564,17 +564,33 @@ with col2:
         st.warning("No geographic data available.")
 
 # =========================
-# 8. Project Gallery with "Load More"
+# 8. Project Gallery - No Duplicates
 # =========================
 st.markdown('<div class="section-header">Project Gallery</div>', unsafe_allow_html=True)
+
 if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Name" in filtered_df.columns:
-    valid_images = filtered_df[filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str) and x.startswith("http"))].copy()
+    # Filter valid image links
+    valid_images = filtered_df[
+        filtered_df["image_link"].apply(lambda x: pd.notna(x) and isinstance(x, str) and x.startswith("http"))
+    ].copy()
+
     if not valid_images.empty:
-        # Separate timeline year projects
-        timeline_projects = valid_images[valid_images["Year"] == selected_year_slider]
-        other_projects = valid_images[valid_images["Year"] != selected_year_slider]
-        
-        # Show timeline year projects first if any
+        # --- Deduplicate projects: keep first occurrence (preferably earliest year) ---
+        if 'Original_Year' in valid_images.columns:
+            valid_images_sorted = valid_images.sort_values('Original_Year')
+        else:
+            valid_images_sorted = valid_images.sort_values('Year')
+
+        unique_images = valid_images_sorted.drop_duplicates(subset='Project_Name', keep='first')
+
+        # Separate into timeline year and others
+        timeline_projects = unique_images[unique_images["Year"] == selected_year_slider]
+        other_projects = unique_images[unique_images["Year"] != selected_year_slider]
+
+        # Shuffle other projects for variety
+        shuffled_others = other_projects.sample(frac=1, random_state=42).reset_index(drop=True)
+
+        # Display timeline year projects first
         if not timeline_projects.empty:
             st.markdown(f"### 🎯 Projects from {selected_year_slider}")
             cols_timeline = st.columns(4)
@@ -583,12 +599,11 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                 with col:
                     image_url = row["image_link"].strip()
                     try:
-                        if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                            # Enhanced caption with duration info
+                        response = requests.head(image_url, timeout=5, headers=HEADERS)
+                        if response.status_code == 200:
                             caption_text = f"⭐ {row['Project_Name']} ({int(row['Year'])})"
                             if 'Project_Span' in row and pd.notna(row['Project_Span']) and str(row['Project_Span']) != str(int(row['Year'])):
                                 caption_text += f" [Duration: {row['Project_Span']}]"
-                            
                             st.image(
                                 image_url,
                                 caption=caption_text,
@@ -596,30 +611,28 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                                 clamp=True,
                                 channels="RGB"
                             )
-                            if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                            if "Blog_Link" in row and pd.notna(row["Blog_Link"]):
                                 st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
                         else:
                             st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
-                    except Exception:
+                    except Exception as e:
                         st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
-        
-        # Show other projects
-        if not other_projects.empty:
+
+        # Display other unique projects
+        if not shuffled_others.empty:
             st.markdown("### 📸 Other Projects")
-            shuffled_images = other_projects.sample(frac=1, random_state=42).reset_index(drop=True)
             per_page = 8
             cols1 = st.columns(4)
-            for i, (_, row) in enumerate(shuffled_images.head(per_page).iterrows()):
+            for i, (_, row) in enumerate(shuffled_others.head(per_page).iterrows()):
                 col = cols1[i % 4]
                 with col:
                     image_url = row["image_link"].strip()
                     try:
-                        if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                            # Enhanced caption for other projects too
+                        response = requests.head(image_url, timeout=5, headers=HEADERS)
+                        if response.status_code == 200:
                             caption_text = f"{row['Project_Name']} ({int(row['Year'])})"
                             if 'Project_Span' in row and pd.notna(row['Project_Span']) and str(row['Project_Span']) != str(int(row['Year'])):
                                 caption_text += f" [Duration: {row['Project_Span']}]"
-                            
                             st.image(
                                 image_url,
                                 caption=caption_text,
@@ -627,29 +640,29 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                                 clamp=True,
                                 channels="RGB"
                             )
-                            if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                            if "Blog_Link" in row and pd.notna(row["Blog_Link"]):
                                 st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
                         else:
                             st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
                     except Exception:
                         st.markdown('<div class="image-placeholder">⚠️ Error</div>', unsafe_allow_html=True)
 
-            if len(shuffled_images) > per_page:
+            # Load More Button
+            if len(shuffled_others) > per_page:
                 if st.button("🔍 Load More Projects"):
-                    st.write("### Additional Projects")
-                    more_images = shuffled_images.iloc[per_page:per_page*2]
+                    st.markdown("### Additional Projects")
+                    more_images = shuffled_others.iloc[per_page:per_page*2]
                     cols2 = st.columns(4)
                     for i, (_, row) in enumerate(more_images.iterrows()):
                         col = cols2[i % 4]
                         with col:
                             image_url = row["image_link"].strip()
                             try:
-                                if requests.head(image_url, timeout=5, headers=HEADERS).status_code == 200:
-                                    # Enhanced caption for load more section
+                                response = requests.head(image_url, timeout=5, headers=HEADERS)
+                                if response.status_code == 200:
                                     caption_text = f"{row['Project_Name']} ({int(row['Year'])})"
                                     if 'Project_Span' in row and pd.notna(row['Project_Span']) and str(row['Project_Span']) != str(int(row['Year'])):
                                         caption_text += f" [Duration: {row['Project_Span']}]"
-                                    
                                     st.image(
                                         image_url,
                                         caption=caption_text,
@@ -657,7 +670,7 @@ if not filtered_df.empty and "image_link" in filtered_df.columns and "Project_Na
                                         clamp=True,
                                         channels="RGB"
                                     )
-                                    if "Blog_Link" in filtered_df.columns and pd.notna(row.get("Blog_Link")):
+                                    if "Blog_Link" in row and pd.notna(row["Blog_Link"]):
                                         st.markdown(f"[📖 More Information]({row['Blog_Link']})", unsafe_allow_html=True)
                                 else:
                                     st.markdown('<div class="image-placeholder">🖼️ Not Available</div>', unsafe_allow_html=True)
