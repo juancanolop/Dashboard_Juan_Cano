@@ -674,8 +674,20 @@ else:
 st.markdown('<div class="section-header">Project Details</div>', unsafe_allow_html=True)
 show_cols = [col for col in ["Project_Name", "Year", "Project_Span", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
 if not filtered_df.empty and show_cols:
-    # Add visual indicator for timeline year and handle project span
-    display_df = filtered_df[show_cols].copy()
+    # Remove duplicates - keep only one entry per project (preferably the original year or first occurrence)
+    if 'Original_Year' in filtered_df.columns:
+        # Keep the entry with the original year when possible
+        unique_df = filtered_df.loc[filtered_df.groupby('Project_Name')['Original_Year'].idxmin()]
+        # Use Original_Year as the main year for display
+        display_df = unique_df[show_cols].copy()
+        if "Year" in display_df.columns and 'Original_Year' in unique_df.columns:
+            display_df["Year"] = unique_df['Original_Year']
+    else:
+        # Fallback: keep first occurrence of each project
+        unique_df = filtered_df.drop_duplicates(subset=['Project_Name'], keep='first')
+        display_df = unique_df[show_cols].copy()
+    
+    # Add visual indicator for timeline year
     if "Year" in display_df.columns:
         display_df["Year"] = display_df["Year"].apply(lambda x: f"⭐ {int(x)}" if x == selected_year_slider else str(int(x)))
     
@@ -693,16 +705,22 @@ if not filtered_df.empty and show_cols:
     if len(filtered_df) > 0:
         col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
         with col_stats1:
-            st.metric("Total Projects", len(filtered_df))
+            unique_projects = len(display_df)
+            st.metric("Unique Projects", unique_projects)
         with col_stats2:
+            # Count projects that were active in timeline year (including expanded ones)
             timeline_count = len(filtered_df[filtered_df["Year"] == selected_year_slider])
-            st.metric(f"Projects in {selected_year_slider}", timeline_count)
+            st.metric(f"Active in {selected_year_slider}", timeline_count)
         with col_stats3:
             year_range = f"{filtered_df['Year'].min():.0f}-{filtered_df['Year'].max():.0f}"
             st.metric("Year Range", year_range)
         with col_stats4:
-            # Count unique projects (to avoid counting expanded projects multiple times)
-            unique_projects = filtered_df['Project_Name'].nunique() if 'Project_Name' in filtered_df.columns else len(filtered_df)
-            st.metric("Unique Projects", unique_projects)
+            # Count projects with multi-year duration
+            if 'Project_Span' in filtered_df.columns:
+                multi_year_count = len(filtered_df[filtered_df['Project_Span'].str.contains('-', na=False)].drop_duplicates(subset=['Project_Name']))
+                st.metric("Multi-Year Projects", multi_year_count)
+            else:
+                total_entries = len(filtered_df)
+                st.metric("Total Entries", total_entries)
 else:
     st.info("No data to display with current filters.")
