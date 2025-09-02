@@ -330,17 +330,17 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 
 # ✅ ARREGLADO: Máximo 5 colores aleatorios para skills
 def get_skill_color(skill_name):
-    """Genera un color consistente basado en el hash del nombre del skill (máximo 5 colores)"""
-    colors_palette = [
-        "#bf9000",  # amarillo
-        "#990000",  # rojo
-        "#0b5394",  # azul
-        "#38761d",  # verde
-        "#351c75"   # violeta
+    """Genera un color consistente en RGBA con opacidad basado en el hash del nombre del skill"""
+    colors_palette_rgba = [
+        "rgba(191, 144, 0, 0.7)",    # amarillo semitransparente
+        "rgba(153, 0, 0, 0.7)",     # rojo semitransparente
+        "rgba(11, 83, 148, 0.7)",   # azul semitransparente
+        "rgba(56, 118, 29, 0.7)",   # verde semitransparente
+        "rgba(53, 28, 117, 0.7)"    # violeta semitransparente
     ]
-    # Usar hash para obtener un índice consistente
     hash_value = int(hashlib.md5(skill_name.encode()).hexdigest(), 16)
-    return colors_palette[hash_value % len(colors_palette)]
+    return colors_palette_rgba[hash_value % len(colors_palette_rgba)]
+
 
 # Sección Skills
 with col1:
