@@ -139,7 +139,6 @@ def load_data():
         df = pd.read_csv(data_url)
         df.columns = df.columns.str.strip()
         
-        # Process Year column
         if df["Year"].dtype == "object":
             df["Year"] = pd.to_datetime(df["Year"], errors='coerce').dt.year
         elif "datetime" in str(df["Year"].dtype):
@@ -152,121 +151,83 @@ def load_data():
 
 def expand_projects_by_duration(df):
     """
-    Expande los proyectos para que aparezcan en todos los años donde estuvieron activos
-    basándose en la fecha de inicio y duración en meses
+    Expande los proyectos por cada año activo, basado en duración en meses.
+    Usa: start_year + (duration_months // 12) para calcular el año final.
     """
     if df.empty:
         return df
-    
-    # Verificar si tenemos las columnas necesarias para duración
+
     duration_col = None
     start_date_col = None
-    
-    # Buscar columnas de duración (posibles nombres)
+
     duration_candidates = ['Duration_Months', 'Duration', 'Months', 'Project_Duration']
     for col in duration_candidates:
         if col in df.columns:
             duration_col = col
             break
-    
-    # Buscar columnas de fecha de inicio
+
     start_date_candidates = ['Start_Date', 'Project_Start', 'Begin_Date', 'Start']
     for col in start_date_candidates:
         if col in df.columns:
             start_date_col = col
             break
-    
-    # Si no tenemos duración pero tenemos fecha de inicio y año, intentar con Year como base
+
+    # Caso 1: Tenemos duración y fecha de inicio
     if duration_col and start_date_col:
         expanded_rows = []
-        
         for idx, row in df.iterrows():
             try:
-                # Obtener duración en meses
                 duration_months = row[duration_col]
                 if pd.isna(duration_months) or duration_months <= 0:
-                    # Si no hay duración válida, usar el proyecto tal como está
                     expanded_rows.append(row.copy())
                     continue
-                
                 duration_months = int(float(duration_months))
-                
-                # Determinar año de inicio
-                start_year = row['Year']
-                if pd.isna(start_year):
+                start_year = int(row['Year']) if not pd.isna(row['Year']) else None
+                if start_year is None:
                     expanded_rows.append(row.copy())
                     continue
-                
-                start_year = int(start_year)
-                
-                # Calcular año final como start_year + (duration_months // 12)
+
+                # ✅ Cálculo corregido: 60 meses → +5 años
                 end_year = start_year + (duration_months // 12)
                 years_affected = list(range(start_year, end_year + 1))
-                
-                # Crear una fila para cada año afectado
+
                 for year in years_affected:
                     new_row = row.copy()
                     new_row['Year'] = year
-                    new_row['Original_Year'] = start_year  # Mantener referencia al año original
-                    new_row['Project_Span'] = f"{start_year}-{max(years_affected)}" if len(years_affected) > 1 else str(start_year)
+                    new_row['Original_Year'] = start_year
+                    new_row['Project_Span'] = f"{start_year}-{end_year}" if len(years_affected) > 1 else str(start_year)
                     expanded_rows.append(new_row)
-                    
             except (ValueError, TypeError):
-                # Si hay error procesando duración, usar fila original
                 expanded_rows.append(row.copy())
-        
-        # Crear DataFrame expandido
-        expanded_df = pd.DataFrame(expanded_rows)
-        
-        # Opción 1: Remover completamente el mensaje
-        # (descomenta la línea de abajo si quieres ver el mensaje)
-        # if expanded_count > original_count:
-        #     st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries")
-        
-        return expanded_df
-    
-    elif duration_col:  # Solo tenemos duración, usar Year como base
+        return pd.DataFrame(expanded_rows)
+
+    # Caso 2: Solo tenemos duración (usar Year como inicio)
+    elif duration_col:
         expanded_rows = []
-        
         for idx, row in df.iterrows():
             try:
                 duration_months = row[duration_col]
                 if pd.isna(duration_months) or duration_months <= 0:
                     expanded_rows.append(row.copy())
                     continue
-                
                 duration_months = int(float(duration_months))
                 start_year = int(row['Year'])
-                
-                # Calcular años de duración del proyecto
-                end_year = start_year
-                if duration_months > 12:
-                    end_year = start_year + ((duration_months - 1) // 12)
-                
-                # Crear entradas para cada año
-                for year in range(start_year, end_year + 1):
+
+                # ✅ Mismo cálculo corregido
+                end_year = start_year + (duration_months // 12)
+                years_affected = list(range(start_year, end_year + 1))
+
+                for year in years_affected:
                     new_row = row.copy()
                     new_row['Year'] = year
                     new_row['Original_Year'] = start_year
-                    new_row['Project_Span'] = f"{start_year}-{end_year}" if end_year > start_year else str(start_year)
+                    new_row['Project_Span'] = f"{start_year}-{end_year}" if len(years_affected) > 1 else str(start_year)
                     expanded_rows.append(new_row)
-                    
             except (ValueError, TypeError):
                 expanded_rows.append(row.copy())
-        
-        expanded_df = pd.DataFrame(expanded_rows)
-        
-        # Opción 1: Remover completamente el mensaje
-        # (descomenta las líneas de abajo si quieres ver el mensaje)
-        # original_count = len(df)
-        # expanded_count = len(expanded_df)
-        # if expanded_count > original_count:
-        #     st.info(f"📅 Projects expanded by duration: {original_count} → {expanded_count} entries ({expanded_count - original_count} additional entries)")
-        
-        return expanded_df
-    
+        return pd.DataFrame(expanded_rows)
+
     else:
-        # No hay información de duración, retornar DataFrame original
         return df
 
 df = load_data()
@@ -274,7 +235,6 @@ if df.empty:
     st.error("Failed to load data. Please check the CSV URL.")
     st.stop()
 
-# Apply duration expansion logic
 df = expand_projects_by_duration(df)
 
 # =========================
