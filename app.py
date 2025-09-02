@@ -332,11 +332,11 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 def get_skill_color(skill_name):
     """Genera un color consistente basado en el hash del nombre del skill (máximo 5 colores)"""
     colors_palette = [
-        "#b69f65",  # amarillo
-        "#9a304a",  # rojo
-        "#2f4f65",  # azul
-        "#40d25f",  # verde
-        "#9d57df"   # violeta
+        "#bf9000",  # amarillo
+        "#990000",  # rojo
+        "#0b5394",  # azul
+        "#38761d",  # verde
+        "#351c75"   # violeta
     ]
     # Usar hash para obtener un índice consistente
     hash_value = int(hashlib.md5(skill_name.encode()).hexdigest(), 16)
