@@ -328,18 +328,15 @@ col1, col2 = st.columns([1, 1])
 CLOUDINARY_BASE_URL = "https://res.cloudinary.com/dmf2pbdlq/image/upload/"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
-# ✅ ARREGLADO: Colores aleatorios para skills basados en hash para consistencia
+# ✅ ARREGLADO: Máximo 5 colores aleatorios para skills
 def get_skill_color(skill_name):
-    """Genera un color consistente basado en el hash del nombre del skill"""
+    """Genera un color consistente basado en el hash del nombre del skill (máximo 5 colores)"""
     colors_palette = [
-        "#4285F4", "#FBBC05", "#EA4335", "#34A853", "#FF6D01", "#3776AB",
-        "#217346", "#0A97D9", "#C51152", "#7D66DD", "#228B22", "#377EB8",
-        "#F2C811", "#00A9CE", "#5855B8", "#0077B5", "#005F5D", "#8E24AA",
-        "#D81B60", "#FFB300", "#6D4C41", "#00897B", "#5E35B1", "#5D4037",
-        "#0277BD", "#E65100", "#311B92", "#C0CA33", "#2E7D32", "#D84315",
-        "#827717", "#006064", "#4E342E", "#BF360C", "#AD1457", "#283593",
-        "#1B5E20", "#01579B", "#C62828", "#4A148C", "#EF6C00", "#B71C1C",
-        "#33691E", "#E64A19", "#C2185B"
+        "#4285F4",  # Azul
+        "#EA4335",  # Rojo
+        "#34A853",  # Verde
+        "#FF6D01",  # Naranja
+        "#8E24AA"   # Morado
     ]
     # Usar hash para obtener un índice consistente
     hash_value = int(hashlib.md5(skill_name.encode()).hexdigest(), 16)
@@ -349,7 +346,14 @@ def get_skill_color(skill_name):
 with col1:
     st.markdown('<div class="section-header">Skills</div>', unsafe_allow_html=True)
     if not filtered_df.empty and "Skills" in filtered_df.columns:
-        all_skills = {s.strip() for skill_list in filtered_df["Skills"].dropna() for s in str(skill_list).split(",") if s.strip()}
+        all_skills = set()
+        for skill_list in filtered_df["Skills"].dropna():
+            for skill in str(skill_list).split(","):
+                # ✅ ARREGLADO: Quitar comillas y limpiar skills
+                skill_clean = skill.strip().strip('"\'[]() ').replace('"', '').replace("'", "")
+                if skill_clean:
+                    all_skills.add(skill_clean)
+        
         skills_list = sorted(all_skills)
         if skills_list:
             cols_skills = st.columns(min(len(skills_list), 6))
@@ -549,16 +553,23 @@ else:
 # =========================
 st.markdown('<div class="section-header">Project Details</div>', unsafe_allow_html=True)
 # ✅ ARREGLADO: Incluir Scope_of_work y Duration en la tabla
-show_cols = [col for col in ["Project_Name", "Year", "Role", "Scope_of_work", "Duration_Display", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
+base_cols = ["Project_Name", "Year", "Role"]
+optional_cols = ["Scope_of_work", "Duration_Display", "Functions", "Client_Company", "Country"]
+show_cols = base_cols + [col for col in optional_cols if col in filtered_df.columns]
 
 if not filtered_df.empty and show_cols:
     if 'Original_Year' in filtered_df.columns:
         unique_df = filtered_df.sort_values('Original_Year').drop_duplicates(subset='Project_Name', keep='first')
-        display_df = unique_df[show_cols].copy()
-        display_df["Year"] = unique_df["Original_Year"].astype(int)
     else:
         unique_df = filtered_df.drop_duplicates(subset='Project_Name', keep='first')
-        display_df = unique_df[show_cols].copy()
+    
+    display_df = unique_df[show_cols].copy()
+    
+    # Asegurar que Year sea del año original
+    if 'Original_Year' in unique_df.columns:
+        display_df["Year"] = unique_df["Original_Year"].astype(int)
+    else:
+        display_df["Year"] = unique_df["Year"].astype(int)
 
     # ✅ Limpieza de la columna Role
     def clean_role(role):
@@ -604,7 +615,7 @@ if not filtered_df.empty and show_cols:
         "Duration_Display": "Duration",
         "Client_Company": "Client"
     }
-    display_df = display_df.rename(columns=column_renames)
+    display_df = display_df.rename(columns={k: v for k, v in column_renames.items() if k in display_df.columns})
 
     st.dataframe(display_df, use_container_width=True, height=400)
 
