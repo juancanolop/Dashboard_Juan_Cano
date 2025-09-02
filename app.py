@@ -606,4 +606,19 @@ if not filtered_df.empty and show_cols:
     }
     display_df = display_df.rename(columns=column_renames)
 
-    st.dataframe(display_df, use_container_width=True, height
+    st.dataframe(display_df, use_container_width=True, height=400)
+
+    col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
+    with col_stats1:
+        st.metric("Unique Projects", len(unique_df))
+    with col_stats2:
+        active_count = display_df[display_df["Year"].str.contains("⭐", na=False)].shape[0]
+        st.metric(f"Active in {selected_year_slider}", active_count)
+    with col_stats3:
+        year_range = f"{unique_df['Original_Year'].min():.0f}-{unique_df['Original_Year'].max():.0f}" if 'Original_Year' in unique_df.columns else f"{unique_df['Year'].min():.0f}-{unique_df['Year'].max():.0f}"
+        st.metric("Project Year Range", year_range)
+    with col_stats4:
+        multi_year = unique_df[unique_df['Project_Span'].str.contains('-', na=False)].shape[0] if 'Project_Span' in unique_df.columns else 0
+        st.metric("Multi-Year Projects", multi_year)
+else:
+    st.info("No data to display with current filters.")
