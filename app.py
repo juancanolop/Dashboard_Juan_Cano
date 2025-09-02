@@ -332,11 +332,11 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 def get_skill_color(skill_name):
     """Genera un color consistente en RGBA con opacidad basado en el hash del nombre del skill"""
     colors_palette_rgba = [
-        "rgba(191, 144, 0, 0.7)",    # amarillo semitransparente
-        "rgba(153, 0, 0, 0.7)",     # rojo semitransparente
-        "rgba(11, 83, 148, 0.7)",   # azul semitransparente
-        "rgba(56, 118, 29, 0.7)",   # verde semitransparente
-        "rgba(53, 28, 117, 0.7)"    # violeta semitransparente
+        "rgba(191, 144, 0, 0.5)",    # amarillo semitransparente
+        "rgba(153, 0, 0, 0.5)",     # rojo semitransparente
+        "rgba(11, 83, 148, 0.5)",   # azul semitransparente
+        "rgba(56, 118, 29, 0.5)",   # verde semitransparente
+        "rgba(53, 28, 117, 0.5)"    # violeta semitransparente
     ]
     hash_value = int(hashlib.md5(skill_name.encode()).hexdigest(), 16)
     return colors_palette_rgba[hash_value % len(colors_palette_rgba)]
