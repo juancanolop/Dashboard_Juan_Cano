@@ -238,6 +238,18 @@ if df.empty:
 df = expand_projects_by_duration(df)
 
 # =========================
+# 4.5 Filter by Visibility in Dashboard
+# =========================
+if "show dashboard" in df.columns:
+    # Convertir a string y quitar espacios, y filtrar solo los que NO son "no"
+    df = df[df["show dashboard"].astype(str).str.strip().str.lower() != "no"]
+    # Opcional: también podrías asegurarte de que solo los "yes" pasen
+    # df = df[df["show dashboard"].astype(str).str.strip().lower().isin(["yes", "y", "sí", "si"])]
+else:
+    st.warning("⚠️ Column 'show dashboard' not found in data. Showing all projects.")
+
+
+# =========================
 # 5. Filters - SISTEMA MEJORADO
 # =========================
 # Get available years
