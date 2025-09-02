@@ -647,7 +647,7 @@ else:
 # 9. Data Table - Unique Projects Only
 # =========================
 st.markdown('<div class="section-header">Project Details</div>', unsafe_allow_html=True)
-show_cols = [col for col in ["Project_Name", "Year", "Project_Span", "Industry", "Scope", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
+show_cols = [col for col in ["Project_Name", "Year", "Role", "Scope_of_work", "Functions", "Client_Company", "Country"] if col in filtered_df.columns]
 
 if not filtered_df.empty and show_cols:
     # --- Deduplicate: Keep only one instance per project ---
