@@ -632,3 +632,37 @@ if not filtered_df.empty and show_cols:
         if 'Original_Year' in row and 'End_Year' in row:
             try:
                 original_year = int(row['Original_Year']) if pd.notna(row['Original_Year']) else int(row['Year'])
+                end_year = int(row['End_Year']) if pd.notna(row['End_Year']) else original_year
+                return original_year <= selected_year_slider <= end_year
+            except:
+                pass
+        return int(row["Year"]) == selected_year_slider
+
+    display_df["Year"] = display_df.apply(
+        lambda row: f"⭐ {int(row['Year'])}" if is_active_in_timeline(row) else str(int(row['Year'])), axis=1
+    )
+
+    # ✅ Renombrar columnas para mejor presentación
+    column_renames = {
+        "Scope_of_work": "Scope of Work",
+        "Duration_Display": "Duration",
+        "Client_Company": "Client"
+    }
+    display_df = display_df.rename(columns={k: v for k, v in column_renames.items() if k in display_df.columns})
+
+    st.dataframe(display_df, use_container_width=True, height=400)
+
+    col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
+    with col_stats1:
+        st.metric("Unique Projects", len(unique_df))
+    with col_stats2:
+        active_count = display_df[display_df["Year"].str.contains("⭐", na=False)].shape[0]
+        st.metric(f"Active in {selected_year_slider}", active_count)
+    with col_stats3:
+        year_range = f"{unique_df['Original_Year'].min():.0f}-{unique_df['Original_Year'].max():.0f}" if 'Original_Year' in unique_df.columns else f"{unique_df['Year'].min():.0f}-{unique_df['Year'].max():.0f}"
+        st.metric("Project Year Range", year_range)
+    with col_stats4:
+        multi_year = unique_df[unique_df['Project_Span'].str.contains('-', na=False)].shape[0] if 'Project_Span' in unique_df.columns else 0
+        st.metric("Multi-Year Projects", multi_year)
+else:
+    st.info("No data to display with current filters.")
