@@ -146,11 +146,18 @@ def load_data():
     data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/main/data.csv"
     try:
         df = pd.read_csv(data_url)
+        # Limpiar nombres de columnas (quitar espacios y normalizar)
         df.columns = df.columns.str.strip()
-        if df["Year"].dtype == "object":
-            df["Year"] = pd.to_datetime(df["Year"], errors='coerce').dt.year
-        elif "datetime" in str(df["Year"].dtype):
-            df["Year"] = df["Year"].dt.year
+        
+        # BUSCAR COLUMNA DE AÑO (por si se llama Year, year, YEAR, etc.)
+        year_col = next((c for c in df.columns if c.lower() == 'year'), None)
+        
+        if year_col:
+            # Forzar a que sea la columna "Year" estándar
+            df = df.rename(columns={year_col: "Year"})
+            # Convertir a número y limpiar nulos
+            df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
+            df = df.dropna(subset=["Year"])
         return df
     except Exception as e:
         st.error(f"Error loading CSV file: {e}")
