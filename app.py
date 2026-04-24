@@ -141,42 +141,44 @@ create_navigation_sidebar()
 # =========================
 # 4. Load Data with Project Duration Logic
 # =========================
-# 1. URL con un parámetro aleatorio para saltar el caché de GitHub/Streamlit
-data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/refs/heads/main/data.csv?cache=0"
+# 1. URL Directa
+data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/refs/heads/main/data.csv"
 
-@st.cache_data(ttl=1) # Forzamos que el caché expire casi de inmediato para esta prueba
-def load_data(url):
+# 2. Función sin caché para pruebas de conexión
+def load_data_debug(url):
     try:
-        # Usamos un User-Agent para evitar bloqueos de seguridad de GitHub
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers)
-        
+        # Forzamos la descarga con un timeout largo
+        response = requests.get(url, timeout=15)
         if response.status_code == 200:
             import io
+            # Leemos el contenido raw
             df = pd.read_csv(io.StringIO(response.text))
-            df.columns = df.columns.str.strip()
-            
-            if "Year" in df.columns:
-                df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
-                df = df.dropna(subset=["Year"])
             return df
         else:
-            st.error(f"Error de GitHub: Código {response.status_code}")
+            st.error(f"Error de GitHub: {response.status_code}")
             return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error de conexión: {e}")
+        st.error(f"Error de red: {e}")
         return pd.DataFrame()
 
-# 2. Llamada a la función
-df = load_data(data_url)
+# 3. Ejecución
+df = load_data_debug(data_url)
 
-# 3. Validación con Debug (para ver qué está leyendo realmente)
+# 4. Bloque de Diagnóstico (Si esto falla, el problema es el CSV)
 if df.empty:
     st.error("No se pudieron cargar los datos.")
-    st.write("Intentando acceder a:", data_url)
+    st.info("Intentando diagnóstico...")
+    # Prueba alternativa: ¿Podemos ver el texto del archivo?
+    test_res = requests.get(data_url)
+    st.code(test_res.text[:500], language="text") # Muestra los primeros 500 caracteres del CSV
     st.stop()
 
-# 4. Cálculo de años
+# 5. Procesamiento una vez cargado
+df.columns = df.columns.str.strip()
+if "Year" in df.columns:
+    df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
+    df = df.dropna(subset=["Year"])
+
 years = sorted(df["Year"].unique())
 min_year, max_year = int(min(years)), int(max(years))
 
