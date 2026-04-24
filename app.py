@@ -141,36 +141,42 @@ create_navigation_sidebar()
 # =========================
 # 4. Load Data with Project Duration Logic
 # =========================
-@st.cache_data
-def load_data():
-    # URL actualizada
-    data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/refs/heads/main/data.csv"
+# 1. URL con un parámetro aleatorio para saltar el caché de GitHub/Streamlit
+data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/refs/heads/main/data.csv?cache=0"
+
+@st.cache_data(ttl=1) # Forzamos que el caché expire casi de inmediato para esta prueba
+def load_data(url):
     try:
-        # Cargamos el dataframe
-        df = pd.read_csv(data_url)
+        # Usamos un User-Agent para evitar bloqueos de seguridad de GitHub
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
         
-        # 1. Limpiar espacios en los nombres de columnas
-        df.columns = df.columns.str.strip()
-        
-        # 2. Asegurar que la columna 'Year' existe y es numérica
-        if "Year" in df.columns:
-            df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
-            # Eliminamos filas donde el año sea nulo para evitar errores en min() y max()
-            df = df.dropna(subset=["Year"])
-        
-        return df
+        if response.status_code == 200:
+            import io
+            df = pd.read_csv(io.StringIO(response.text))
+            df.columns = df.columns.str.strip()
+            
+            if "Year" in df.columns:
+                df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
+                df = df.dropna(subset=["Year"])
+            return df
+        else:
+            st.error(f"Error de GitHub: Código {response.status_code}")
+            return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error loading CSV file: {e}")
+        st.error(f"Error de conexión: {e}")
         return pd.DataFrame()
 
-# Ejecución y validación
-df = load_data()
+# 2. Llamada a la función
+df = load_data(data_url)
 
+# 3. Validación con Debug (para ver qué está leyendo realmente)
 if df.empty:
-    st.error("No se pudieron cargar los datos. Verifica la conexión con GitHub.")
+    st.error("No se pudieron cargar los datos.")
+    st.write("Intentando acceder a:", data_url)
     st.stop()
 
-# Ahora el cálculo de min/max será seguro
+# 4. Cálculo de años
 years = sorted(df["Year"].unique())
 min_year, max_year = int(min(years)), int(max(years))
 
