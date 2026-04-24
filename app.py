@@ -141,44 +141,38 @@ create_navigation_sidebar()
 # =========================
 # 4. Load Data with Project Duration Logic
 # =========================
-@st.cache_data(ttl=600) # El caché se limpia cada 10 minutos
+@st.cache_data
 def load_data():
-    # URL RAW de GitHub
-    data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/main/data.csv"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-
+    # URL actualizada
+    data_url = "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/refs/heads/main/data.csv"
     try:
-        # Usamos requests para obtener el contenido primero y asegurar la conexión
-        response = requests.get(data_url, headers=headers, timeout=10)
-        response.raise_for_status() # Lanza error si el link está roto (404)
+        # Cargamos el dataframe
+        df = pd.read_csv(data_url)
         
-        # Leer el CSV desde el contenido de la respuesta
-        import io
-        df = pd.read_csv(io.StringIO(response.text))
-        
-        # Limpieza básica de columnas
+        # 1. Limpiar espacios en los nombres de columnas
         df.columns = df.columns.str.strip()
         
-        # Convertir Year a numérico de inmediato
-        if 'Year' in df.columns:
-            df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
-            df = df.dropna(subset=['Year'])
-            
+        # 2. Asegurar que la columna 'Year' existe y es numérica
+        if "Year" in df.columns:
+            df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
+            # Eliminamos filas donde el año sea nulo para evitar errores en min() y max()
+            df = df.dropna(subset=["Year"])
+        
         return df
     except Exception as e:
-        st.error(f"Error crítico de conexión: {e}")
+        st.error(f"Error loading CSV file: {e}")
         return pd.DataFrame()
 
-# --- Ejecución ---
+# Ejecución y validación
 df = load_data()
 
 if df.empty:
-    st.error("🚫 No se pudo obtener ningún dato del CSV.")
-    st.info("Verifica que el repositorio en GitHub sea PÚBLICO y que el archivo se llame 'data.csv'.")
+    st.error("No se pudieron cargar los datos. Verifica la conexión con GitHub.")
     st.stop()
+
+# Ahora el cálculo de min/max será seguro
+years = sorted(df["Year"].unique())
+min_year, max_year = int(min(years)), int(max(years))
 
 def expand_projects_by_duration(df):
     if df.empty: return df
