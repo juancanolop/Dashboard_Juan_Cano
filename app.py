@@ -205,6 +205,13 @@ else:
 # 5. Filters - SISTEMA MEJORADO
 # =========================
 years = sorted(df["Year"].dropna().unique())
+
+# Verificamos si la lista 'years' tiene datos para evitar el ValueError
+if not years:
+    st.error("No se encontraron años válidos en los datos. Por favor, revisa la columna 'Year' de tu CSV.")
+    st.stop()
+
+# Ahora es seguro calcular min y max
 min_year, max_year = int(min(years)), int(max(years))
 st.title("Projects Dashboard")
 
