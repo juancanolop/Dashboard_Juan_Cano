@@ -202,17 +202,22 @@ else:
     st.warning("⚠️ Column 'show dashboard' not found in data. Showing all projects.")
 
 # =========================
-# 5. Filters - SISTEMA MEJORADO
+# 5. Filters - PROTECCIÓN CONTRA VALORES VACÍOS
 # =========================
+# Aseguramos que la columna Year sea numérica y eliminamos nulos
+df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
 years = sorted(df["Year"].dropna().unique())
 
-# Verificamos si la lista 'years' tiene datos para evitar el ValueError
-if not years:
-    st.error("No se encontraron años válidos en los datos. Por favor, revisa la columna 'Year' de tu CSV.")
+# Validación crítica: Si no hay años, mostramos el error y detenemos la app
+if len(years) == 0:
+    st.error("🚨 Error: No se encontraron datos en la columna 'Year'.")
+    st.info("Verifica que el CSV tenga una columna llamada 'Year' con números válidos.")
     st.stop()
 
-# Ahora es seguro calcular min y max
-min_year, max_year = int(min(years)), int(max(years))
+# Solo llegamos aquí si 'years' tiene al menos un valor
+min_year = int(min(years))
+max_year = int(max(years))
+
 st.title("Projects Dashboard")
 
 filter_col1, filter_col2 = st.columns([2, 1])
