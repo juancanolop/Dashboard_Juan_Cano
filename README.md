@@ -1,4 +1,33 @@
-# Juan David Cano  
+# Juan David Cano — Projects Dashboard
+
+This repo hosts the **interactive Projects Dashboard** shown at `dashboard.juandavidcano.com`, plus the
+profile below. It used to be a Streamlit app (still kept in [`streamlit-legacy/`](streamlit-legacy/) for
+reference); it's now a **Next.js / React app** so it can be deployed on Vercel while staying dynamic.
+
+## 📊 Dashboard architecture
+
+- **Stack**: Next.js 16 (App Router) + TypeScript + Tailwind CSS + react-leaflet.
+- **Data source**: [`data.csv`](data.csv) in this repo — same file the old Streamlit app read. The app
+  fetches it straight from GitHub's raw URL on the server, revalidating every 5 minutes, so **editing
+  data.csv (e.g. from the GitHub web UI) updates the live dashboard within minutes — no redeploy needed.**
+  If that fetch ever fails, it falls back to the copy of `data.csv` bundled in the deployment.
+- **Images / logos**: unchanged — still served from Cloudinary via the `image_link` / `Software` columns.
+- **Legacy Streamlit app**: moved to [`streamlit-legacy/`](streamlit-legacy/), kept only for reference. It's
+  no longer deployed.
+
+### Run it locally
+
+```bash
+npm install
+npm run dev
+```
+
+### Deploy
+
+Import this repo in [Vercel](https://vercel.com/new) (framework preset: Next.js, no extra config needed) and
+point the `dashboard` subdomain at it. See the PR/commit description or ask Claude for the exact DNS steps.
+
+---
 
 🎯 **Civil Engineer | Project Manager | CAD/BIM Developer | Data Enthusiast**  
 
@@ -44,8 +73,8 @@ Here are some of the engineering and software projects I'm currently working on:
 - 🌎 **QGIS App for Plumbing Systems** *(Python + QGIS)*  
   Automates pressure and velocity calculations for gravity, suction, and pressurized networks.  
 
-- 📊 **Dynamic Project Dashboard** *(Streamlit)*  
-  Visualizes project timelines, schedules, and geospatial data for **construction planning**.  
+- 📊 **Dynamic Project Dashboard** *(Next.js + React)*  
+  Visualizes project timelines, schedules, and geospatial data for **construction planning** — this repo.  
 
 ---
 

@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: #0e1117;
+  color: #f1f1f1;
+}
+
+.section-header {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #07b9d1;
+  margin: 0 0 0.75rem 0;
+  border-bottom: 2px solid #07b9d1;
+  padding-bottom: 0.4rem;
+}
+
+.image-placeholder {
+  background-color: #2d3436;
+  color: #b2bec3;
+  font-size: 0.8rem;
+}
+
+.skill-badge {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.skill-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Leaflet needs an explicit z-index ceiling so it doesn't float above modals/menus */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10;
+}

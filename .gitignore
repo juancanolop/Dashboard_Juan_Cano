@@ -1,1 +1,24 @@
-*.pyc pycache/ venv/ .env *.log *.csv *.xlsx
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+
+# Env
+.env
+.env*.local
+
+# Python (legacy streamlit app)
+*.pyc
+__pycache__/
+venv/
+*.log
+
+# Stray spreadsheet exports (data.csv itself stays tracked)
+*.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
