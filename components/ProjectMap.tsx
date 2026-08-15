@@ -98,7 +98,7 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
       <MapContainer
         center={initialCenter}
         zoom={locations.length === 1 ? 13 : 5}
-        scrollWheelZoom={false}
+        scrollWheelZoom
         style={{ height: "600px", width: "100%", borderRadius: "8px" }}
       >
         <FitToMarkers locations={locations} />
