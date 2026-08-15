@@ -7,10 +7,13 @@ reference); it's now a **Next.js / React app** so it can be deployed on Vercel w
 ## 📊 Dashboard architecture
 
 - **Stack**: Next.js 16 (App Router) + TypeScript + Tailwind CSS + react-leaflet.
-- **Data source**: [`data.csv`](data.csv) in this repo — same file the old Streamlit app read. The app
-  fetches it straight from GitHub's raw URL on the server, revalidating every 5 minutes, so **editing
-  data.csv (e.g. from the GitHub web UI) updates the live dashboard within minutes — no redeploy needed.**
-  If that fetch ever fails, it falls back to the copy of `data.csv` bundled in the deployment.
+- **Data source**: a [Google Sheet](https://docs.google.com/spreadsheets/d/1Z2259jNKj_MtKDzSBX_-pvk5DKupLZ55cYfhEgmqPEI/edit)
+  ("Projects" tab), fetched server-side as CSV via Sheets' `gviz` endpoint, revalidating every 5 minutes —
+  **editing a row in the Sheet updates the live dashboard within minutes, no redeploy needed.** Category,
+  Industry, Country and "show dashboard" have dropdowns backed by the sheet's "Choices" tab; see its
+  "Read Me" tab for editing instructions. If that fetch ever fails, the app falls back to
+  [`data.csv`](data.csv) — a snapshot kept in this repo for that purpose (it's the file the old Streamlit
+  app used to read; no longer the live source, only a safety net).
 - **Images / logos**: unchanged — still served from Cloudinary via the `image_link` / `Software` columns.
 - **Legacy Streamlit app**: moved to [`streamlit-legacy/`](streamlit-legacy/), kept only for reference. It's
   no longer deployed.

@@ -3,11 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Project } from "./types";
 
-// Same public CSV the previous Streamlit app read from. Keeping this as the
-// source of truth means editing data.csv on GitHub (even without touching
-// this app's code) is enough to update the live dashboard.
+// The "Projects" tab of the Google Sheet Juan edits directly, fetched as CSV
+// via Sheets' gviz endpoint (works by sheet *name*, so it survives tabs being
+// reordered). The sheet just needs "Anyone with the link can view" sharing.
+// Editing it there updates the live dashboard within minutes — no redeploy.
 const DATA_URL =
-  "https://raw.githubusercontent.com/juancanolop/Dashboard_Juan_Cano/main/data.csv";
+  "https://docs.google.com/spreadsheets/d/1Z2259jNKj_MtKDzSBX_-pvk5DKupLZ55cYfhEgmqPEI/gviz/tq?tqx=out:csv&sheet=Projects";
 
 const ROLE_MAPPINGS: [string, string][] = [
   ["civil engineer", "Civil Engineer"],
@@ -82,7 +83,13 @@ function parseYear(raw: string | undefined): number | null {
 
 function parseNumber(raw: string | undefined): number | null {
   if (raw === undefined || raw === null || raw.trim() === "") return null;
-  const n = Number(raw);
+  let normalized = raw.trim();
+  // The Google Sheet's locale renders decimals with a comma (e.g. "-76,046194"
+  // instead of "-76.046194") regardless of how the value was typed in.
+  if (/^-?\d+,\d+$/.test(normalized)) {
+    normalized = normalized.replace(",", ".");
+  }
+  const n = Number(normalized);
   return Number.isNaN(n) ? null : n;
 }
 
