@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-l
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Project } from "@/lib/types";
+import Lightbox from "./Lightbox";
 
 // react-leaflet's default marker icons reference image paths that bundlers
 // don't resolve correctly, so point them at the CDN copies instead.
@@ -76,7 +77,50 @@ function MarkerPreview({ project }: { project: Project }) {
   );
 }
 
+/** The popup shown after clicking a marker: a bigger photo (click to open
+ *  the full-screen lightbox) plus the scope of work, like a little fact
+ *  sheet for the project. */
+function MarkerPopup({ project, onOpenImage }: { project: Project; onOpenImage: (project: Project) => void }) {
+  const [failed, setFailed] = useState(false);
+  const hasImage = project.ImageLink && project.ImageLink.startsWith("http") && !failed;
+  const whenText =
+    project.ProjectSpan && project.ProjectSpan !== String(project.Year) ? project.ProjectSpan : String(project.Year);
+
+  return (
+    <div className="w-64">
+      {hasImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={project.ImageLink}
+          alt={project.Project_Name}
+          className="mb-2 h-36 w-full cursor-zoom-in rounded object-cover transition hover:opacity-90"
+          onError={() => setFailed(true)}
+          onClick={() => onOpenImage(project)}
+        />
+      )}
+      <p className="text-sm font-semibold leading-snug text-gray-900">{project.Project_Name}</p>
+      <p className="mt-0.5 text-xs text-gray-500">
+        {whenText}
+        {project.Industry ? ` · ${project.Industry}` : ""}
+      </p>
+      {project.ScopeOfWork && (
+        <p className="mt-1.5 max-h-24 overflow-y-auto text-xs leading-snug text-gray-700">{project.ScopeOfWork}</p>
+      )}
+      {hasImage && (
+        <button
+          onClick={() => onOpenImage(project)}
+          className="mt-1.5 text-xs font-medium text-blue-600 hover:underline"
+        >
+          🔍 View larger
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectMap({ projects, highlightYear }: Props) {
+  const [lightboxProject, setLightboxProject] = useState<Project | null>(null);
+
   const locations = useMemo(
     () => projects.filter((p) => p.Latitud !== null && p.Longitud !== null),
     [projects]
@@ -115,22 +159,8 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
             <Tooltip direction="top" offset={[0, -35]} opacity={1}>
               <MarkerPreview project={p} />
             </Tooltip>
-            <Popup>
-              <strong>{p.Project_Name}</strong>
-              <br />
-              Year: {p.Year}
-              {p.ProjectSpan && p.ProjectSpan !== String(p.Year) ? (
-                <>
-                  <br />
-                  Duration: {p.ProjectSpan}
-                </>
-              ) : null}
-              {p.Industry ? (
-                <>
-                  <br />
-                  Industry: {p.Industry}
-                </>
-              ) : null}
+            <Popup minWidth={240} maxWidth={280}>
+              <MarkerPopup project={p} onOpenImage={setLightboxProject} />
             </Popup>
           </Marker>
         ))}
@@ -139,6 +169,16 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
         🔴 <span className="text-red-400">Timeline Year Projects</span> | 🔵{" "}
         <span className="text-blue-400">Other Years</span>
       </p>
+
+      {lightboxProject && (
+        <Lightbox
+          imageUrl={lightboxProject.ImageLink}
+          caption={`${lightboxProject.Project_Name} — ${
+            lightboxProject.DurationDisplay || lightboxProject.ProjectSpan
+          }`}
+          onClose={() => setLightboxProject(null)}
+        />
+      )}
     </div>
   );
 }
