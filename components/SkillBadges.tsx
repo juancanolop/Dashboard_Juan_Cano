@@ -11,20 +11,23 @@ export default function SkillBadges({ skills }: Props) {
       {skills.length === 0 ? (
         <p className="text-sm text-muted">No skills available for selected filters.</p>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          {skills.map((skill) => (
-            <span
-              key={skill}
-              className="skill-badge min-w-[90px] rounded-full px-3.5 py-2.5 text-center text-sm font-bold text-white shadow-lg"
-              style={{
-                backgroundColor: skillColor(skill),
-                border: "2px solid rgba(255,255,255,0.1)",
-                textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
-              }}
-            >
-              {skill}
-            </span>
-          ))}
+        <div className="flex flex-wrap gap-1.5">
+          {skills.map((skill) => {
+            const style = skillColor(skill);
+            return (
+              <span
+                key={skill}
+                className="rounded-md px-2 py-0.5 text-xs font-medium leading-relaxed"
+                style={{
+                  backgroundColor: style.background,
+                  border: `1px solid ${style.border}`,
+                  color: style.color,
+                }}
+              >
+                {skill}
+              </span>
+            );
+          })}
         </div>
       )}
     </div>

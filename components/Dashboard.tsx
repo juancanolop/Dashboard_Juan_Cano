@@ -12,7 +12,7 @@ import ProjectsTable from "./ProjectsTable";
 
 const ProjectMap = dynamic(() => import("./ProjectMap"), {
   ssr: false,
-  loading: () => <div className="h-[600px] animate-pulse rounded-lg bg-panel" />,
+  loading: () => <div className="h-[640px] animate-pulse rounded-lg bg-panel" />,
 });
 
 export default function Dashboard({ projects }: { projects: Project[] }) {
@@ -107,18 +107,16 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
         />
 
         <div className="mb-8 grid gap-8 lg:grid-cols-2">
-          <div className="space-y-6">
-            <SkillBadges skills={skills} />
-            <SoftwareLogos software={software} />
-          </div>
           <div>
             <h3 className="section-header">Project Locations</h3>
             <ProjectMap projects={filtered} highlightYear={selectedYear} />
           </div>
+          <ProjectGallery projects={filtered} highlightYear={selectedYear} />
         </div>
 
-        <div className="mb-8">
-          <ProjectGallery projects={filtered} highlightYear={selectedYear} />
+        <div className="mb-8 grid gap-8 lg:grid-cols-2">
+          <SkillBadges skills={skills} />
+          <SoftwareLogos software={software} />
         </div>
 
         <ProjectsTable projects={filtered} highlightYear={selectedYear} />

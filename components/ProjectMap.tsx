@@ -143,7 +143,7 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
         center={initialCenter}
         zoom={locations.length === 1 ? 13 : 5}
         scrollWheelZoom
-        style={{ height: "600px", width: "100%", borderRadius: "8px" }}
+        style={{ height: "640px", width: "100%", borderRadius: "8px" }}
       >
         <FitToMarkers locations={locations} />
         <TileLayer

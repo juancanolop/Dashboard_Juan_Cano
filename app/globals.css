@@ -23,14 +23,6 @@ body {
   font-size: 0.8rem;
 }
 
-.skill-badge {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.skill-badge:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
-}
-
 /* Leaflet needs an explicit z-index ceiling so it doesn't float above modals/menus */
 .leaflet-pane,
 .leaflet-top,

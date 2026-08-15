@@ -100,7 +100,7 @@ export default function ProjectGallery({ projects, highlightYear }: Props) {
       {timelineProjects.length > 0 && (
         <div className="mb-6">
           <h4 className="mb-3 text-base font-semibold text-white">🎯 Projects Active in {highlightYear}</h4>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {timelineProjects.slice(0, 8).map((p) => (
               <GalleryCard key={p.Project_Name} project={p} starred onOpen={setLightboxProject} />
             ))}
@@ -111,7 +111,7 @@ export default function ProjectGallery({ projects, highlightYear }: Props) {
       {otherProjects.length > 0 && (
         <div>
           <h4 className="mb-3 text-base font-semibold text-white">📸 Other Projects</h4>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {visibleOthers.map((p) => (
               <GalleryCard key={p.Project_Name} project={p} starred={false} onOpen={setLightboxProject} />
             ))}
