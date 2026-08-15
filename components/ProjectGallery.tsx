@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Project } from "@/lib/types";
 import { seededShuffle } from "@/lib/shuffle";
+import Lightbox from "./Lightbox";
 
 interface Props {
   projects: Project[];
@@ -13,7 +14,15 @@ function isActiveInYear(p: Project, year: number): boolean {
   return p.OriginalYear <= year && year <= p.EndYear;
 }
 
-function GalleryCard({ project, starred }: { project: Project; starred: boolean }) {
+function GalleryCard({
+  project,
+  starred,
+  onOpen,
+}: {
+  project: Project;
+  starred: boolean;
+  onOpen: (project: Project) => void;
+}) {
   const [failed, setFailed] = useState(false);
   const caption =
     project.DurationDisplay || (project.ProjectSpan !== String(project.Year) ? project.ProjectSpan : String(project.Year));
@@ -27,8 +36,9 @@ function GalleryCard({ project, starred }: { project: Project; starred: boolean 
         <img
           src={project.ImageLink}
           alt={project.Project_Name}
-          className="h-40 w-full object-cover"
+          className="h-40 w-full cursor-zoom-in object-cover transition hover:opacity-90"
           onError={() => setFailed(true)}
+          onClick={() => onOpen(project)}
         />
       )}
       <div className="p-2">
@@ -54,6 +64,7 @@ function GalleryCard({ project, starred }: { project: Project; starred: boolean 
 
 export default function ProjectGallery({ projects, highlightYear }: Props) {
   const [showMore, setShowMore] = useState(false);
+  const [lightboxProject, setLightboxProject] = useState<Project | null>(null);
   const perPage = 8;
 
   const { timelineProjects, otherProjects } = useMemo(() => {
@@ -91,7 +102,7 @@ export default function ProjectGallery({ projects, highlightYear }: Props) {
           <h4 className="mb-3 text-base font-semibold text-white">🎯 Projects Active in {highlightYear}</h4>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {timelineProjects.slice(0, 8).map((p) => (
-              <GalleryCard key={p.Project_Name} project={p} starred />
+              <GalleryCard key={p.Project_Name} project={p} starred onOpen={setLightboxProject} />
             ))}
           </div>
         </div>
@@ -102,7 +113,7 @@ export default function ProjectGallery({ projects, highlightYear }: Props) {
           <h4 className="mb-3 text-base font-semibold text-white">📸 Other Projects</h4>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {visibleOthers.map((p) => (
-              <GalleryCard key={p.Project_Name} project={p} starred={false} />
+              <GalleryCard key={p.Project_Name} project={p} starred={false} onOpen={setLightboxProject} />
             ))}
           </div>
           {otherProjects.length > perPage && !showMore && (
@@ -114,6 +125,16 @@ export default function ProjectGallery({ projects, highlightYear }: Props) {
             </button>
           )}
         </div>
+      )}
+
+      {lightboxProject && (
+        <Lightbox
+          imageUrl={lightboxProject.ImageLink}
+          caption={`${lightboxProject.Project_Name} — ${
+            lightboxProject.DurationDisplay || lightboxProject.ProjectSpan
+          }`}
+          onClose={() => setLightboxProject(null)}
+        />
       )}
     </div>
   );

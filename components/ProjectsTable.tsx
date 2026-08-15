@@ -12,16 +12,37 @@ function isActiveInTimeline(p: Project, year: number): boolean {
   return p.OriginalYear <= year && year <= p.EndYear;
 }
 
-const COLUMNS: { key: keyof Project | "Year"; label: string }[] = [
-  { key: "Project_Name", label: "Project" },
-  { key: "Year", label: "Year" },
-  { key: "RoleClean", label: "Role" },
-  { key: "ScopeOfWork", label: "Scope of Work" },
-  { key: "DurationDisplay", label: "Duration" },
-  { key: "Functions", label: "Functions" },
-  { key: "ClientCompany", label: "Client" },
-  { key: "Country", label: "Country" },
+// Widths sum to 100%. Functions gets the most room since it tends to hold
+// the longest text; every other column stays close in size so no single
+// row looks lopsided.
+const COLUMNS: { key: string; label: string; width: string }[] = [
+  { key: "Project_Name", label: "Project", width: "13%" },
+  { key: "Year", label: "Year", width: "6%" },
+  { key: "RoleClean", label: "Role", width: "9%" },
+  { key: "ScopeOfWork", label: "Scope of Work", width: "16%" },
+  { key: "DurationDisplay", label: "Duration", width: "9%" },
+  { key: "Functions", label: "Functions", width: "28%" },
+  { key: "ClientCompany", label: "Client", width: "12%" },
+  { key: "Country", label: "Country", width: "7%" },
 ];
+
+/** Long free-text cells (Scope of Work, Functions) get a capped height with
+ *  their own scrollbar, so one wordy project can't blow out every row. */
+function ClampCell({ children }: { children: React.ReactNode }) {
+  return (
+    <td className="border-b border-border/60 px-2.5 py-1.5 align-top text-xs text-gray-200">
+      <div className="table-scroll max-h-14 overflow-y-auto whitespace-pre-line pr-1 leading-snug">{children}</div>
+    </td>
+  );
+}
+
+function Cell({ children }: { children: React.ReactNode }) {
+  return (
+    <td className="border-b border-border/60 px-2.5 py-1.5 align-top text-xs leading-snug text-gray-200">
+      {children}
+    </td>
+  );
+}
 
 export default function ProjectsTable({ projects, highlightYear }: Props) {
   const uniqueProjects = useMemo(() => {
@@ -56,11 +77,19 @@ export default function ProjectsTable({ projects, highlightYear }: Props) {
       <h3 className="section-header">Project Details</h3>
 
       <div className="mb-4 overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] table-fixed text-left text-xs">
+          <colgroup>
+            {COLUMNS.map((col) => (
+              <col key={col.key} style={{ width: col.width }} />
+            ))}
+          </colgroup>
           <thead className="bg-panel text-white">
             <tr>
               {COLUMNS.map((col) => (
-                <th key={col.key} className="whitespace-nowrap border-b border-border px-3 py-2 font-semibold">
+                <th
+                  key={col.key}
+                  className="truncate border-b border-border px-2.5 py-1.5 text-xs font-semibold"
+                >
                   {col.label}
                 </th>
               ))}
@@ -69,21 +98,17 @@ export default function ProjectsTable({ projects, highlightYear }: Props) {
           <tbody>
             {uniqueProjects.map((p, idx) => (
               <tr key={p.Project_Name} className={idx % 2 === 1 ? "bg-white/[0.03]" : undefined}>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">{p.Project_Name}</td>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">
+                <Cell>{p.Project_Name}</Cell>
+                <Cell>
                   {isActiveInTimeline(p, highlightYear) ? "⭐ " : ""}
                   {p.OriginalYear}
-                </td>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">{p.RoleClean}</td>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">{p.ScopeOfWork}</td>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">
-                  {p.DurationDisplay || p.ProjectSpan}
-                </td>
-                <td className="max-w-xs whitespace-pre-line border-b border-border/60 px-3 py-2 text-gray-200">
-                  {p.Functions}
-                </td>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">{p.ClientCompany}</td>
-                <td className="border-b border-border/60 px-3 py-2 text-gray-200">{p.Country}</td>
+                </Cell>
+                <Cell>{p.RoleClean}</Cell>
+                <ClampCell>{p.ScopeOfWork}</ClampCell>
+                <Cell>{p.DurationDisplay || p.ProjectSpan}</Cell>
+                <ClampCell>{p.Functions}</ClampCell>
+                <Cell>{p.ClientCompany}</Cell>
+                <Cell>{p.Country}</Cell>
               </tr>
             ))}
           </tbody>

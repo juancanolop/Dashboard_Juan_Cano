@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -31,15 +31,49 @@ interface Props {
   highlightYear: number;
 }
 
-/** Recenters an already-mounted map instead of destroying/recreating it,
- *  which is what react-leaflet needs to avoid remounting the Leaflet
- *  container on every filter change. */
-function RecenterMap({ center, zoom }: { center: [number, number]; zoom: number }) {
+/** Recenters/refits an already-mounted map instead of destroying and
+ *  recreating it (which is what react-leaflet needs to avoid remounting the
+ *  Leaflet container on every filter change). Zooms to fit whatever set of
+ *  markers is currently visible whenever the filtered project list changes. */
+function FitToMarkers({ locations }: { locations: Project[] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom);
-  }, [map, center, zoom]);
+    if (locations.length === 0) return;
+    if (locations.length === 1) {
+      map.setView([locations[0].Latitud as number, locations[0].Longitud as number], 13, {
+        animate: true,
+      });
+      return;
+    }
+    const bounds = L.latLngBounds(
+      locations.map((p) => [p.Latitud as number, p.Longitud as number] as [number, number])
+    );
+    map.fitBounds(bounds, { padding: [40, 40], animate: true, maxZoom: 14 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, locations]);
   return null;
+}
+
+function MarkerPreview({ project }: { project: Project }) {
+  const [failed, setFailed] = useState(false);
+  const hasImage = project.ImageLink && project.ImageLink.startsWith("http") && !failed;
+
+  return (
+    <div className="w-40">
+      {hasImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={project.ImageLink}
+          alt={project.Project_Name}
+          className="mb-1 h-24 w-full rounded object-cover"
+          onError={() => setFailed(true)}
+        />
+      )}
+      <p className="text-xs font-semibold leading-snug text-gray-900">
+        {project.Project_Name} ({project.Year})
+      </p>
+    </div>
+  );
 }
 
 export default function ProjectMap({ projects, highlightYear }: Props) {
@@ -48,7 +82,7 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
     [projects]
   );
 
-  const center = useMemo((): [number, number] => {
+  const initialCenter = useMemo((): [number, number] => {
     if (locations.length === 0) return [4.5, -74.3]; // fallback: Colombia
     const lat = locations.reduce((sum, p) => sum + (p.Latitud ?? 0), 0) / locations.length;
     const lon = locations.reduce((sum, p) => sum + (p.Longitud ?? 0), 0) / locations.length;
@@ -62,12 +96,12 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
   return (
     <div>
       <MapContainer
-        center={center}
-        zoom={locations.length === 1 ? 12 : 5}
+        center={initialCenter}
+        zoom={locations.length === 1 ? 13 : 5}
         scrollWheelZoom={false}
         style={{ height: "600px", width: "100%", borderRadius: "8px" }}
       >
-        <RecenterMap center={center} zoom={locations.length === 1 ? 12 : 5} />
+        <FitToMarkers locations={locations} />
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -78,8 +112,8 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
             position={[p.Latitud as number, p.Longitud as number]}
             icon={p.Year === highlightYear ? redIcon : blueIcon}
           >
-            <Tooltip>
-              {p.Project_Name} ({p.Year})
+            <Tooltip direction="top" offset={[0, -35]} opacity={1}>
+              <MarkerPreview project={p} />
             </Tooltip>
             <Popup>
               <strong>{p.Project_Name}</strong>

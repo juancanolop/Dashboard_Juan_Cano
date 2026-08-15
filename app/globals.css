@@ -37,3 +37,16 @@ body {
 .leaflet-bottom {
   z-index: 10;
 }
+
+/* Slim, dark-themed scrollbar for clamped table cells */
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #34495e transparent;
+}
+.table-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background-color: #34495e;
+  border-radius: 3px;
+}
