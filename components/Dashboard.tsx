@@ -9,6 +9,7 @@ import SkillBadges from "./SkillBadges";
 import SoftwareLogos from "./SoftwareLogos";
 import ProjectGallery from "./ProjectGallery";
 import ProjectsTable from "./ProjectsTable";
+import { useIsMobile } from "./useIsMobile";
 
 const ProjectMap = dynamic(() => import("./ProjectMap"), {
   ssr: false,
@@ -75,36 +76,81 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
     return Array.from(set).sort();
   }, [filtered]);
 
+  const sidebar = (
+    <Sidebar
+      years={years}
+      selectedYearsSidebar={selectedYearsSidebar}
+      onYearsChange={setSelectedYearsSidebar}
+      industries={industries}
+      selectedIndustries={selectedIndustries}
+      onIndustriesChange={setSelectedIndustries}
+      categories={categories}
+      selectedCategories={selectedCategories}
+      onCategoriesChange={setSelectedCategories}
+      roles={roles}
+      selectedRoles={selectedRoles}
+      onRolesChange={setSelectedRoles}
+    />
+  );
+
+  const filtersBar = (
+    <FiltersBar
+      minYear={minYear}
+      maxYear={maxYear}
+      selectedYear={selectedYear}
+      onYearChange={setSelectedYear}
+      filterMode={filterMode}
+      onFilterModeChange={setFilterMode}
+      finalYears={finalYears}
+      projectCount={filtered.length}
+    />
+  );
+
+  const isMobile = useIsMobile();
+
+  // Mobile gets its own layout (map first, filters/nav pushed to the
+  // bottom) instead of reusing the desktop grid — see useIsMobile for why
+  // this branches instead of hiding/showing the same tree with CSS: a
+  // single <ProjectMap> instance is kept either way, just in a different
+  // JSX tree, so it's never mounted twice.
+  if (isMobile) {
+    return (
+      <div className="min-h-screen">
+        <main className="p-4">
+          <h1 className="mb-4 text-2xl font-bold text-white">Projects Dashboard</h1>
+
+          <div className="mb-6">
+            <h3 className="section-header">Project Locations</h3>
+            <ProjectMap projects={filtered} highlightYear={selectedYear} height={460} />
+          </div>
+
+          <div className="mb-8">{filtersBar}</div>
+
+          <div className="mb-8">
+            <ProjectGallery projects={filtered} highlightYear={selectedYear} />
+          </div>
+
+          <div className="mb-8 space-y-6">
+            <SkillBadges skills={skills} />
+            <SoftwareLogos software={software} />
+          </div>
+
+          <ProjectsTable projects={filtered} highlightYear={selectedYear} />
+        </main>
+
+        {sidebar}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <Sidebar
-        years={years}
-        selectedYearsSidebar={selectedYearsSidebar}
-        onYearsChange={setSelectedYearsSidebar}
-        industries={industries}
-        selectedIndustries={selectedIndustries}
-        onIndustriesChange={setSelectedIndustries}
-        categories={categories}
-        selectedCategories={selectedCategories}
-        onCategoriesChange={setSelectedCategories}
-        roles={roles}
-        selectedRoles={selectedRoles}
-        onRolesChange={setSelectedRoles}
-      />
+      {sidebar}
 
       <main className="flex-1 p-4 sm:p-6">
         <h1 className="mb-4 text-3xl font-bold text-white">Projects Dashboard</h1>
 
-        <FiltersBar
-          minYear={minYear}
-          maxYear={maxYear}
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear}
-          filterMode={filterMode}
-          onFilterModeChange={setFilterMode}
-          finalYears={finalYears}
-          projectCount={filtered.length}
-        />
+        {filtersBar}
 
         <div className="mb-8 grid gap-8 lg:grid-cols-2">
           <div>

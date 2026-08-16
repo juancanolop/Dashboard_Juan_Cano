@@ -30,6 +30,8 @@ const blueIcon = new L.Icon({
 interface Props {
   projects: Project[];
   highlightYear: number;
+  /** Defaults to 640px (desktop). The mobile layout passes a shorter value. */
+  height?: number;
 }
 
 /** Recenters/refits an already-mounted map instead of destroying and
@@ -118,7 +120,7 @@ function MarkerPopup({ project, onOpenImage }: { project: Project; onOpenImage: 
   );
 }
 
-export default function ProjectMap({ projects, highlightYear }: Props) {
+export default function ProjectMap({ projects, highlightYear, height = 640 }: Props) {
   const [lightboxProject, setLightboxProject] = useState<Project | null>(null);
 
   const locations = useMemo(
@@ -143,7 +145,7 @@ export default function ProjectMap({ projects, highlightYear }: Props) {
         center={initialCenter}
         zoom={locations.length === 1 ? 13 : 5}
         scrollWheelZoom
-        style={{ height: "640px", width: "100%", borderRadius: "8px" }}
+        style={{ height: `${height}px`, width: "100%", borderRadius: "8px" }}
       >
         <FitToMarkers locations={locations} />
         <TileLayer
