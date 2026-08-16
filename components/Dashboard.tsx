@@ -39,12 +39,24 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
 
   const [selectedYear, setSelectedYear] = useState(maxYear);
   const [filterMode, setFilterMode] = useState<FilterMode>("include");
-  const [selectedYearsSidebar, setSelectedYearsSidebar] = useState<string[]>(["All"]);
+  // Empty by default (not ["All"]) so the timeline slider is the primary
+  // filter out of the box: with nothing picked here, finalYears below
+  // resolves to just the slider's year. The sidebar checklist + "Filter
+  // Mode" stay available for people who want to combine/override that.
+  const [selectedYearsSidebar, setSelectedYearsSidebar] = useState<string[]>([]);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [showAllProjects, setShowAllProjects] = useState(false);
+
+  function handleYearChange(year: number) {
+    setSelectedYear(year);
+    // Touching the timeline hands control back to it, out of "show all" mode.
+    if (showAllProjects) setShowAllProjects(false);
+  }
 
   const finalYears = useMemo(() => {
+    if (showAllProjects) return years;
     const sidebarYearList = selectedYearsSidebar.includes("All")
       ? years
       : selectedYearsSidebar.filter((y) => /^\d+$/.test(y)).map(Number);
@@ -52,7 +64,7 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
       return Array.from(new Set([...sidebarYearList, selectedYear])).sort((a, b) => a - b);
     }
     return [...sidebarYearList].sort((a, b) => a - b);
-  }, [selectedYearsSidebar, selectedYear, filterMode, years]);
+  }, [showAllProjects, selectedYearsSidebar, selectedYear, filterMode, years]);
 
   const filtered = useMemo(() => {
     return projects.filter((p) => {
@@ -98,11 +110,13 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
       minYear={minYear}
       maxYear={maxYear}
       selectedYear={selectedYear}
-      onYearChange={setSelectedYear}
+      onYearChange={handleYearChange}
       filterMode={filterMode}
       onFilterModeChange={setFilterMode}
       finalYears={finalYears}
       projectCount={filtered.length}
+      showAllProjects={showAllProjects}
+      onShowAllProjects={() => setShowAllProjects(true)}
     />
   );
 
