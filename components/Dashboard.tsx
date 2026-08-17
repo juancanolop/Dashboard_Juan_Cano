@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Project, FilterMode } from "@/lib/types";
 import Sidebar from "./Sidebar";
+import SiteHeader from "./SiteHeader";
 import FiltersBar from "./FiltersBar";
 import SkillBadges from "./SkillBadges";
 import SoftwareLogos from "./SoftwareLogos";
@@ -130,6 +131,7 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
   if (isMobile) {
     return (
       <div className="min-h-screen">
+        <SiteHeader />
         <main className="p-4">
           <h1 className="mb-4 text-2xl font-bold text-white">Projects Dashboard</h1>
 
@@ -158,29 +160,32 @@ export default function Dashboard({ projects }: { projects: Project[] }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      {sidebar}
+    <div className="min-h-screen">
+      <SiteHeader />
+      <div className="flex flex-col lg:flex-row">
+        {sidebar}
 
-      <main className="flex-1 p-4 sm:p-6">
-        <h1 className="mb-4 text-3xl font-bold text-white">Projects Dashboard</h1>
+        <main className="flex-1 p-4 sm:p-6">
+          <h1 className="mb-4 text-3xl font-bold text-white">Projects Dashboard</h1>
 
-        {filtersBar}
+          {filtersBar}
 
-        <div className="mb-8 grid gap-8 lg:grid-cols-2">
-          <div>
-            <h3 className="section-header">Project Locations</h3>
-            <ProjectMap projects={filtered} highlightYear={selectedYear} />
+          <div className="mb-8 grid gap-8 lg:grid-cols-2">
+            <div>
+              <h3 className="section-header">Project Locations</h3>
+              <ProjectMap projects={filtered} highlightYear={selectedYear} />
+            </div>
+            <ProjectGallery projects={filtered} highlightYear={selectedYear} />
           </div>
-          <ProjectGallery projects={filtered} highlightYear={selectedYear} />
-        </div>
 
-        <div className="mb-8 grid gap-8 lg:grid-cols-2">
-          <SkillBadges skills={skills} />
-          <SoftwareLogos software={software} />
-        </div>
+          <div className="mb-8 grid gap-8 lg:grid-cols-2">
+            <SkillBadges skills={skills} />
+            <SoftwareLogos software={software} />
+          </div>
 
-        <ProjectsTable projects={filtered} highlightYear={selectedYear} />
-      </main>
+          <ProjectsTable projects={filtered} highlightYear={selectedYear} />
+        </main>
+      </div>
     </div>
   );
 }

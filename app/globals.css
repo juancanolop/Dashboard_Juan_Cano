@@ -30,6 +30,14 @@ body {
   z-index: 10;
 }
 
+/* Leaflet's controls (zoom buttons, attribution) render in their own
+   compositing layer that can still show through the mobile nav overlay
+   above despite the z-index rule, in some browsers — hide them outright
+   while the menu is open. */
+body.mobile-menu-open .leaflet-control-container {
+  visibility: hidden;
+}
+
 /* Slim, dark-themed scrollbar for clamped table cells */
 .table-scroll {
   scrollbar-width: thin;
@@ -41,4 +49,43 @@ body {
 .table-scroll::-webkit-scrollbar-thumb {
   background-color: #34495e;
   border-radius: 3px;
+}
+
+/* --- Shared with the main site (juandavidcano.com), for the site header --- */
+
+.site-header {
+  font-family: var(--font-hanken), sans-serif;
+}
+
+.glow-pill {
+  position: relative;
+  background-color: rgb(10, 10, 10);
+  isolation: isolate;
+}
+.glow-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 200% at 50% 120%, rgba(181, 225, 255, 0.35), transparent 65%);
+  filter: blur(6px);
+  z-index: -1;
+}
+
+.spin3d {
+  animation: spin3d 14s linear infinite;
+}
+@keyframes spin3d {
+  from {
+    transform: rotateX(15deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(15deg) rotateY(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin3d {
+    animation: none;
+    transform: rotateX(15deg) rotateY(25deg);
+  }
 }
